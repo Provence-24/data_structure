@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>树基础 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        /* 树的可视化样式 */
+        .tree-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            min-height: 320px;
+        }
+
+        .tree-level {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tree-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tree-node-box {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--color-idle);
+            border-radius: 50%;
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: white;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tree-node-box.active {
+            border-color: var(--color-active);
+            background: #ffebee;
+            color: var(--color-active);
+            transform: scale(1.15);
+            box-shadow: 0 0 16px rgba(229, 57, 53, 0.5);
+        }
+
+        .tree-node-box.visited {
+            border-color: var(--color-done);
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .tree-node-box.current {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+            color: #1976d2;
+            transform: scale(1.1);
+        }
+
+        .tree-children {
+            display: flex;
+            gap: 60px;
+            margin-top: 20px;
+        }
+
+        .tree-branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tree-edge {
+            width: 2px;
+            height: 20px;
+            background: #ccc;
+        }
+
+        .tree-edge.active {
+            background: var(--color-active);
+            box-shadow: 0 0 6px rgba(229, 57, 53, 0.5);
+        }
+
+        .node-label {
+            position: absolute;
+            top: -22px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        /* 结果显示 */
+        .result-display {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            min-height: 50px;
+        }
+
+        .result-display .label {
+            color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .result-display .value {
+            color: #4ade80;
+            letter-spacing: 2px;
+        }
+
+        .result-display .value .current {
+            color: var(--color-active);
+            font-weight: 700;
+        }
+
+        /* 栈帧样式 */
+        .stack-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 200px;
+        }
+
+        .stack-frame {
+            width: 180px;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            border: 2px solid var(--color-idle);
+            border-radius: 8px;
+            background: white;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stack-frame.active {
+            border-color: var(--color-active);
+            background: #ffebee;
+            box-shadow: 0 0 12px rgba(229, 57, 53, 0.4);
+        }
+
+        .stack-frame.returning {
+            border-color: var(--color-done);
+            background: #e8f5e9;
+            opacity: 0.7;
+        }
+
+        .stack-arrow {
+            color: #999;
+            font-size: 1.2rem;
+            margin: 2px 0;
+        }
+
+        /* 信息框 */
+        .info-box {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+
+        .highlight-box h4 {
+            font-size: 0.85rem;
+            color: #856404;
+            margin-bottom: 6px;
+        }
+
+        .highlight-box p {
+            font-size: 0.95rem;
+            color: #856404;
+            line-height: 1.5;
+        }
+
+        .next-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .next-box h4 {
+            font-size: 0.85rem;
+            color: #0d47a1;
+            margin-bottom: 6px;
+        }
+
+        .next-box p {
+            font-size: 0.95rem;
+            color: #0d47a1;
+            line-height: 1.5;
+        }
+
+        /* 操作标签 */
+        .op-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .op-tab {
+            padding: 10px 18px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+        }
+
+        .op-tab:hover {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+        }
+
+        .op-tab.active {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            color: var(--color-text-muted);
+        }
+
+        /* 遍历顺序说明 */
+        .order-hint {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .order-hint-item {
+            padding: 6px 12px;
+            background: var(--color-bg);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .order-hint-item strong {
+            color: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>树基础 - 交互演示</h1>
+            <p class="subtitle">理解二叉树遍历 | 前序、中序、后序</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <div class="vis-panel">
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="preorder">前序（根左右）</button>
+                        <button class="op-tab" data-op="inorder">中序（左根右）</button>
+                        <button class="op-tab" data-op="postorder">后序（左右根）</button>
+                    </div>
+
+                    <div class="order-hint" id="orderHint">
+                        <span class="order-hint-item"><strong>前序：</strong>根 → 左 → 右</span>
+                    </div>
+
+                    <div class="tree-visual" id="treeVisual">
+                        <!-- 树结构将在这里渲染 -->
+                    </div>
+
+                    <div class="result-display" id="resultDisplay">
+                        <div class="label">遍历结果</div>
+                        <div class="value" id="resultValue">等待开始...</div>
+                    </div>
+                </div>
+
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前步骤</h4>
+                        <p id="stepDescription">点击"下一步"开始演示</p>
+                    </div>
+
+                    <div class="highlight-box" id="whyBox" style="display:none;">
+                        <h4>为什么要这么做？</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-box" id="nextBox" style="display:none;">
+                        <h4>下一步将做什么？</h4>
+                        <p id="nextText"></p>
+                    </div>
+
+                    <div class="info-box" style="margin-top: 16px;">
+                        <h4>调用栈</h4>
+                        <div id="stackDisplay" class="stack-visual">栈为空</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="buttonRow">
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script>
+        // ============================================================================
+        // 全局状态
+        // ============================================================================
+
+        var currentOperation = "preorder";
+        var steps = [];
+        var stepManager = null;
+
+        // 树结构定义
+        var tree = {
+            value: 1,
+            left: {
+                value: 2,
+                left: { value: 4, left: null, right: null },
+                right: { value: 5, left: null, right: null }
+            },
+            right: {
+                value: 3,
+                left: null,
+                right: { value: 6, left: null, right: null }
+            }
+        };
+
+        // 树的可视化布局配置
+        var treeLayout = {
+            1: { x: 200, y: 40, parent: null, side: null },
+            2: { x: 100, y: 120, parent: 1, side: 'left' },
+            3: { x: 300, y: 120, parent: 1, side: 'right' },
+            4: { x: 50, y: 200, parent: 2, side: 'left' },
+            5: { x: 150, y: 200, parent: 2, side: 'right' },
+            6: { x: 350, y: 200, parent: 3, side: 'right' }
+        };
+
+        // ============================================================================
+        // 步骤生成
+        // ============================================================================
+
+        function generatePreorderSteps(node) {
+            var steps = [];
+            var result = [];
+
+            function traverse(n, depth, callStack) {
+                if (n === null) {
+                    steps.push({
+                        state: {
+                            type: "preorder",
+                            phase: "null",
+                            visited: result.slice(),
+                            current: null,
+                            callStack: callStack.slice(),
+                            result: result.join(" ")
+                        },
+                        description: `节点为空，返回`,
+                        why: `空节点不需要遍历，直接返回`,
+                        next: `返回上层继续`
+                    });
+                    return;
+                }
+
+                callStack.push(n.value);
+
+                // 访问当前节点（根）
+                steps.push({
+                    state: {
+                        type: "preorder",
+                        phase: "visit",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `访问节点 ${n.value}（根）`,
+                    why: `前序遍历：先访问根节点`,
+                    next: `继续遍历左子树`
+                });
+
+                result.push(n.value);
+
+                steps.push({
+                    state: {
+                        type: "preorder",
+                        phase: "added",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `将 ${n.value} 加入结果，当前结果：[${result.join(", ")}]`,
+                    why: `根节点已访问，加入遍历结果`,
+                    next: `递归遍历左子树`
+                });
+
+                // 遍历左子树
+                steps.push({
+                    state: {
+                        type: "preorder",
+                        phase: "toLeft",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `递归遍历节点 ${n.value} 的左子树`,
+                    why: `前序遍历：根 → 左 → 右`,
+                    next: `进入左子树`
+                });
+
+                traverse(n.left, depth + 1, callStack);
+
+                // 遍历右子树
+                steps.push({
+                    state: {
+                        type: "preorder",
+                        phase: "toRight",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `递归遍历节点 ${n.value} 的右子树`,
+                    why: `左子树遍历完成，现在遍历右子树`,
+                    next: `进入右子树`
+                });
+
+                traverse(n.right, depth + 1, callStack);
+
+                callStack.pop();
+
+                steps.push({
+                    state: {
+                        type: "preorder",
+                        phase: "return",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `节点 ${n.value} 的左右子树遍历完成，返回`,
+                    why: `该节点的遍历任务已完成`,
+                    next: `返回上层`
+                });
+            }
+
+            steps.push({
+                state: {
+                    type: "preorder",
+                    phase: "start",
+                    visited: [],
+                    current: null,
+                    callStack: [],
+                    result: ""
+                },
+                description: `开始前序遍历二叉树`,
+                why: `前序：根 → 左 → 右，先访问根节点`,
+                next: `访问根节点 1`
+            });
+
+            traverse(tree, 0, []);
+
+            steps.push({
+                state: {
+                    type: "preorder",
+                    phase: "done",
+                    visited: result.slice(),
+                    current: null,
+                    callStack: [],
+                    result: result.join(" ")
+                },
+                description: `遍历完成！结果：[${result.join(", ")}]`,
+                why: `所有节点都已遍历`,
+                next: null
+            });
+
+            return steps;
+        }
+
+        function generateInorderSteps(node) {
+            var steps = [];
+            var result = [];
+
+            function traverse(n, depth, callStack) {
+                if (n === null) {
+                    steps.push({
+                        state: {
+                            type: "inorder",
+                            phase: "null",
+                            visited: result.slice(),
+                            current: null,
+                            callStack: callStack.slice(),
+                            result: result.join(" ")
+                        },
+                        description: `节点为空，返回`,
+                        why: `空节点不需要遍历，直接返回`,
+                        next: `返回上层继续`
+                    });
+                    return;
+                }
+
+                callStack.push(n.value);
+
+                // 遍历左子树
+                steps.push({
+                    state: {
+                        type: "inorder",
+                        phase: "toLeft",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `递归遍历节点 ${n.value} 的左子树`,
+                    why: `中序遍历：左 → 根 → 右，先遍历左子树`,
+                    next: `进入左子树`
+                });
+
+                traverse(n.left, depth + 1, callStack);
+
+                // 访问当前节点（根）
+                steps.push({
+                    state: {
+                        type: "inorder",
+                        phase: "visit",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `访问节点 ${n.value}（根）`,
+                    why: `左子树遍历完成，现在访问根节点`,
+                    next: `继续遍历右子树`
+                });
+
+                result.push(n.value);
+
+                steps.push({
+                    state: {
+                        type: "inorder",
+                        phase: "added",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `将 ${n.value} 加入结果，当前结果：[${result.join(", ")}]`,
+                    why: `根节点已访问，加入遍历结果`,
+                    next: `递归遍历右子树`
+                });
+
+                // 遍历右子树
+                steps.push({
+                    state: {
+                        type: "inorder",
+                        phase: "toRight",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `递归遍历节点 ${n.value} 的右子树`,
+                    why: `根节点已访问，现在遍历右子树`,
+                    next: `进入右子树`
+                });
+
+                traverse(n.right, depth + 1, callStack);
+
+                callStack.pop();
+
+                steps.push({
+                    state: {
+                        type: "inorder",
+                        phase: "return",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `节点 ${n.value} 的左右子树遍历完成，返回`,
+                    why: `该节点的遍历任务已完成`,
+                    next: `返回上层`
+                });
+            }
+
+            steps.push({
+                state: {
+                    type: "inorder",
+                    phase: "start",
+                    visited: [],
+                    current: null,
+                    callStack: [],
+                    result: ""
+                },
+                description: `开始中序遍历二叉树`,
+                why: `中序：左 → 根 → 右，先遍历左子树`,
+                next: `进入左子树`
+            });
+
+            traverse(tree, 0, []);
+
+            steps.push({
+                state: {
+                    type: "inorder",
+                    phase: "done",
+                    visited: result.slice(),
+                    current: null,
+                    callStack: [],
+                    result: result.join(" ")
+                },
+                description: `遍历完成！结果：[${result.join(", ")}]`,
+                why: `所有节点都已遍历`,
+                next: null
+            });
+
+            return steps;
+        }
+
+        function generatePostorderSteps(node) {
+            var steps = [];
+            var result = [];
+
+            function traverse(n, depth, callStack) {
+                if (n === null) {
+                    steps.push({
+                        state: {
+                            type: "postorder",
+                            phase: "null",
+                            visited: result.slice(),
+                            current: null,
+                            callStack: callStack.slice(),
+                            result: result.join(" ")
+                        },
+                        description: `节点为空，返回`,
+                        why: `空节点不需要遍历，直接返回`,
+                        next: `返回上层继续`
+                    });
+                    return;
+                }
+
+                callStack.push(n.value);
+
+                // 遍历左子树
+                steps.push({
+                    state: {
+                        type: "postorder",
+                        phase: "toLeft",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `递归遍历节点 ${n.value} 的左子树`,
+                    why: `后序遍历：左 → 右 → 根，先遍历左子树`,
+                    next: `进入左子树`
+                });
+
+                traverse(n.left, depth + 1, callStack);
+
+                // 遍历右子树
+                steps.push({
+                    state: {
+                        type: "postorder",
+                        phase: "toRight",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `递归遍历节点 ${n.value} 的右子树`,
+                    why: `左子树遍历完成，现在遍历右子树`,
+                    next: `进入右子树`
+                });
+
+                traverse(n.right, depth + 1, callStack);
+
+                // 访问当前节点（根）
+                steps.push({
+                    state: {
+                        type: "postorder",
+                        phase: "visit",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `访问节点 ${n.value}（根）`,
+                    why: `左右子树都遍历完成，现在访问根节点`,
+                    next: `将节点加入结果`
+                });
+
+                result.push(n.value);
+
+                steps.push({
+                    state: {
+                        type: "postorder",
+                        phase: "added",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `将 ${n.value} 加入结果，当前结果：[${result.join(", ")}]`,
+                    why: `根节点已访问，加入遍历结果`,
+                    next: `返回上层`
+                });
+
+                callStack.pop();
+
+                steps.push({
+                    state: {
+                        type: "postorder",
+                        phase: "return",
+                        visited: result.slice(),
+                        current: n.value,
+                        callStack: callStack.slice(),
+                        result: result.join(" ")
+                    },
+                    description: `节点 ${n.value} 遍历完成，返回`,
+                    why: `该节点的遍历任务已完成`,
+                    next: `返回上层`
+                });
+            }
+
+            steps.push({
+                state: {
+                    type: "postorder",
+                    phase: "start",
+                    visited: [],
+                    current: null,
+                    callStack: [],
+                    result: ""
+                },
+                description: `开始后序遍历二叉树`,
+                why: `后序：左 → 右 → 根，先遍历左子树`,
+                next: `进入左子树`
+            });
+
+            traverse(tree, 0, []);
+
+            steps.push({
+                state: {
+                    type: "postorder",
+                    phase: "done",
+                    visited: result.slice(),
+                    current: null,
+                    callStack: [],
+                    result: result.join(" ")
+                },
+                description: `遍历完成！结果：[${result.join(", ")}]`,
+                why: `所有节点都已遍历`,
+                next: null
+            });
+
+            return steps;
+        }
+
+        // ============================================================================
+        // 渲染函数
+        // ============================================================================
+
+        function renderTree(state) {
+            var container = document.getElementById("treeVisual");
+            var visited = state.visited || [];
+            var current = state.current;
+
+            var html = `
+                <div class="tree-level">
+                    <div class="tree-node">
+                        <div class="tree-node-box ${current === 1 ? 'current' : (visited.includes(1) ? 'visited' : '')}">1</div>
+                    </div>
+                </div>
+                <div class="tree-edge"></div>
+                <div class="tree-level">
+                    <div class="tree-node">
+                        <div class="tree-node-box ${current === 2 ? 'current' : (visited.includes(2) ? 'visited' : '')}">2</div>
+                    </div>
+                    <div class="tree-node">
+                        <div class="tree-node-box ${current === 3 ? 'current' : (visited.includes(3) ? 'visited' : '')}">3</div>
+                    </div>
+                </div>
+                <div class="tree-edge"></div>
+                <div class="tree-level">
+                    <div class="tree-node">
+                        <div class="tree-node-box ${current === 4 ? 'current' : (visited.includes(4) ? 'visited' : '')}">4</div>
+                    </div>
+                    <div class="tree-node">
+                        <div class="tree-node-box ${current === 5 ? 'current' : (visited.includes(5) ? 'visited' : '')}">5</div>
+                    </div>
+                    <div class="tree-node">
+                        <div class="tree-node-box ${current === 6 ? 'current' : (visited.includes(6) ? 'visited' : '')}">6</div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function renderStack(state) {
+            var container = document.getElementById("stackDisplay");
+            var stack = state.callStack || [];
+
+            if (stack.length === 0) {
+                container.innerHTML = '<div style="color:#999;padding:20px;">栈为空</div>';
+                return;
+            }
+
+            var html = '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">';
+
+            for (var i = 0; i < stack.length; i++) {
+                var val = stack[i];
+                var isActive = (i === stack.length - 1);
+
+                html += '<div class="stack-frame ' + (isActive ? 'active' : '') + '">';
+                html += '<div>node(' + val + ')</div>';
+                html += '</div>';
+
+                if (i < stack.length - 1) {
+                    html += '<div class="stack-arrow">↓</div>';
+                }
+            }
+
+            html += '<div style="margin-top:8px;font-size:0.75rem;color:#999;">← 栈底</div>';
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        function render(state) {
+            renderTree(state);
+            renderStack(state);
+
+            // 更新结果
+            var resultValue = document.getElementById("resultValue");
+            if (state.result === "") {
+                resultValue.innerHTML = "等待开始...";
+            } else {
+                var values = state.result.split(" ");
+                var html = "";
+                for (var i = 0; i < values.length; i++) {
+                    if (i > 0) html += " → ";
+                    if (i === values.length - 1 && state.phase !== "done") {
+                        html += '<span class="current">' + values[i] + '</span>';
+                    } else {
+                        html += values[i];
+                    }
+                }
+                resultValue.innerHTML = html;
+            }
+
+            // 更新步骤信息
+            var stepInfo = stepManager.getStepInfo();
+            document.getElementById("stepDescription").textContent = stepInfo.description;
+
+            var whyText = document.getElementById("whyText");
+            var nextText = document.getElementById("nextText");
+
+            if (stepInfo.why) {
+                document.getElementById("whyBox").style.display = "block";
+                whyText.textContent = stepInfo.why;
+            } else {
+                document.getElementById("whyBox").style.display = "none";
+            }
+
+            if (stepInfo.next) {
+                document.getElementById("nextBox").style.display = "block";
+                nextText.textContent = stepInfo.next;
+            } else {
+                document.getElementById("nextBox").style.display = "none";
+            }
+        }
+
+        // ============================================================================
+        // 初始化和事件处理
+        // ============================================================================
+
+        function init(operation) {
+            currentOperation = operation;
+
+            switch (operation) {
+                case "preorder":
+                    steps = generatePreorderSteps(tree);
+                    document.getElementById("orderHint").innerHTML =
+                        '<span class="order-hint-item"><strong>前序：</strong>根 → 左 → 右</span>';
+                    break;
+                case "inorder":
+                    steps = generateInorderSteps(tree);
+                    document.getElementById("orderHint").innerHTML =
+                        '<span class="order-hint-item"><strong>中序：</strong>左 → 根 → 右</span>';
+                    break;
+                case "postorder":
+                    steps = generatePostorderSteps(tree);
+                    document.getElementById("orderHint").innerHTML =
+                        '<span class="order-hint-item"><strong>后序：</strong>左 → 右 → 根</span>';
+                    break;
+            }
+
+            stepManager = createStepManager(steps, render);
+            stepManager.render();
+
+            updateButtons();
+        }
+
+        function updateButtons() {
+            var btnPrev = document.getElementById("btnPrev");
+            var btnNext = document.getElementById("btnNext");
+            var stepIndicator = document.getElementById("stepIndicator");
+
+            if (btnPrev) btnPrev.disabled = !stepManager.hasPrev();
+            if (btnNext) btnNext.disabled = !stepManager.hasNext();
+
+            if (stepIndicator && stepManager) {
+                var curr = stepManager.getCurrentStep() + 1;
+                var total = stepManager.getTotalSteps();
+                stepIndicator.textContent = "步骤 " + curr + " / " + total;
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener("DOMContentLoaded", function() {
+            // 创建按钮
+            var buttonRow = document.getElementById("buttonRow");
+            buttonRow.innerHTML =
+                '<button class="btn btn-secondary" id="btnPrev" disabled>← 上一步</button>' +
+                '<span class="step-indicator" id="stepIndicator">步骤 1 / 1</span>' +
+                '<button class="btn btn-primary" id="btnNext" disabled>下一步 →</button>' +
+                '<button class="btn btn-secondary" id="btnReset">重置</button>';
+
+            // 绑定操作标签
+            var opTabs = document.querySelectorAll(".op-tab");
+            opTabs.forEach(function(tab) {
+                tab.addEventListener("click", function() {
+                    opTabs.forEach(function(t) { t.classList.remove("active"); });
+                    tab.classList.add("active");
+                    init(tab.getAttribute("data-op"));
+                });
+            });
+
+            // 绑定按钮事件
+            document.getElementById("btnPrev").addEventListener("click", function() {
+                stepManager.prev();
+                updateButtons();
+            });
+
+            document.getElementById("btnNext").addEventListener("click", function() {
+                stepManager.next();
+                updateButtons();
+            });
+
+            document.getElementById("btnReset").addEventListener("click", function() {
+                init(currentOperation);
+            });
+
+            // 初始加载
+            var activeTab = document.querySelector(".op-tab.active");
+            var initialOp = activeTab ? activeTab.getAttribute("data-op") : "preorder";
+            init(initialOp);
+        });
+    </script>
+</body>
+</html>

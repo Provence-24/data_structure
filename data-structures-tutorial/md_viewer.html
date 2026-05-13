@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原理讲解</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            background: #f5f5f7;
+            padding: 20px;
+        }
+
+        .md-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .md-header {
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .md-header h1 {
+            font-size: 1.8rem;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .md-header .chapter-nav {
+            font-size: 0.9rem;
+            color: #6e6e73;
+        }
+
+        .md-header .chapter-nav a {
+            color: #0071e3;
+            text-decoration: none;
+        }
+
+        .md-header .chapter-nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* Markdown 样式 */
+        .md-content {
+            font-size: 1rem;
+            line-height: 1.8;
+            color: #1d1d1f;
+        }
+
+        .md-content h1 {
+            font-size: 1.6rem;
+            margin-top: 30px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .md-content h2 {
+            font-size: 1.3rem;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .md-content h3 {
+            font-size: 1.1rem;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: #444;
+        }
+
+        .md-content p {
+            margin-bottom: 16px;
+        }
+
+        .md-content ul, .md-content ol {
+            margin-bottom: 16px;
+            padding-left: 24px;
+        }
+
+        .md-content li {
+            margin-bottom: 8px;
+        }
+
+        .md-content code {
+            background: #f0f0f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #d12f1b;
+        }
+
+        .md-content pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+
+        .md-content pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+            font-size: 0.9rem;
+        }
+
+        .md-content blockquote {
+            border-left: 4px solid #0071e3;
+            padding: 12px 16px;
+            margin: 16px 0;
+            background: #f0f7ff;
+            color: #333;
+        }
+
+        .md-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+
+        .md-content th, .md-content td {
+            border: 1px solid #e0e0e0;
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        .md-content th {
+            background: #f5f5f7;
+            font-weight: 600;
+        }
+
+        .md-content img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        .md-content a {
+            color: #0071e3;
+            text-decoration: none;
+        }
+
+        .md-content a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6e6e73;
+        }
+
+        .error {
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+            color: #c62828;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-buttons a {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .nav-buttons .prev-btn {
+            background: #f5f5f7;
+            color: #333;
+        }
+
+        .nav-buttons .prev-btn:hover {
+            background: #e8e8e8;
+        }
+
+        .nav-buttons .next-btn {
+            background: #0071e3;
+            color: white;
+        }
+
+        .nav-buttons .next-btn:hover {
+            background: #0077ed;
+        }
+    </style>
+</head>
+<body>
+    <div class="md-container">
+        <div class="md-header">
+            <h1 id="pageTitle">加载中...</h1>
+            <div class="chapter-nav" id="chapterNav"></div>
+        </div>
+
+        <div class="md-content" id="mdContent">
+            <div class="loading">正在加载内容...</div>
+        </div>
+
+        <div class="nav-buttons" id="navButtons"></div>
+    </div>
+
+    <script>
+        // 章节配置
+        var chapters = [
+            { id: "00", name: "Python基础", path: "00_python_basics/README.md" },
+            { id: "01", name: "数组与链表", path: "01_array_and_list/README.md" },
+            { id: "02", name: "链表", path: "02_linked_list/README.md" },
+            { id: "03", name: "栈", path: "03_stack/README.md" },
+            { id: "04", name: "队列", path: "04_queue/README.md" },
+            { id: "05", name: "递归", path: "05_recursion/README.md" },
+            { id: "06", name: "树基础", path: "06_tree_basics/README.md" },
+            { id: "07", name: "二叉搜索树", path: "07_binary_search_tree/README.md" },
+            { id: "08", name: "堆", path: "08_heap/README.md" },
+            { id: "09", name: "哈希表", path: "09_hash_table/README.md" },
+            { id: "10", name: "图", path: "10_graph/README.md" },
+            { id: "11", name: "排序算法", path: "11_sorting_algorithms/README.md" }
+        ];
+
+        // 获取 URL 参数
+        var params = new URLSearchParams(window.location.search);
+        var chapterId = params.get('chapter') || '01';
+
+        // 配置 marked.js
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        // 渲染 Markdown
+        function renderMarkdown(content) {
+            return marked.parse(content);
+        }
+
+        // 加载 README
+        function loadReadme(chapterId) {
+            var chapter = chapters.find(function(c) { return c.id === chapterId; });
+
+            if (!chapter) {
+                document.getElementById('mdContent').innerHTML =
+                    '<div class="error">未找到章节: ' + chapterId + '</div>';
+                return;
+            }
+
+            document.getElementById('pageTitle').textContent = chapter.name + ' - 原理讲解';
+
+            // 设置导航
+            var currentIndex = chapters.findIndex(function(c) { return c.id === chapterId; });
+            var navHtml = '';
+            if (currentIndex > 0) {
+                var prev = chapters[currentIndex - 1];
+                navHtml += '<a href="?chapter=' + prev.id + '">← ' + prev.id + ' ' + prev.name + '</a>';
+            }
+            navHtml += ' | ';
+            if (currentIndex < chapters.length - 1) {
+                var next = chapters[currentIndex + 1];
+                navHtml += '<a href="?chapter=' + next.id + '">' + next.id + ' ' + next.name + ' →</a>';
+            }
+            document.getElementById('chapterNav').innerHTML = navHtml;
+
+            // 加载文件
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', chapter.path, true);
+            xhr.setRequestHeader('Content-Type', 'text/plain; charset=utf-8');
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    document.getElementById('mdContent').innerHTML = renderMarkdown(xhr.responseText);
+                } else {
+                    document.getElementById('mdContent').innerHTML =
+                        '<div class="error">文件加载失败 (' + xhr.status + ')：' + chapter.path + '</div>' +
+                        '<p>可能原因：需要通过 Web 服务器访问（如 <code>python -m http.server</code>），直接打开文件无法加载 Markdown。</p>';
+                }
+            };
+            xhr.onerror = function() {
+                document.getElementById('mdContent').innerHTML =
+                    '<div class="error">网络错误，无法加载文件</div>';
+            };
+            xhr.send();
+        }
+
+        // 页面加载
+        loadReadme(chapterId);
+    </script>
+</body>
+</html>

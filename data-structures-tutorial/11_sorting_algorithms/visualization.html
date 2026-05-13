@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排序算法 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .sorting-visual {
+            padding: 20px;
+            min-height: 260px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bars-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            height: 200px;
+            padding: 16px;
+            background: #1d1d1f;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .bar {
+            width: 100%;
+            background: var(--color-idle);
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s;
+            min-width: 24px;
+        }
+
+        .bar.active {
+            background: var(--color-active);
+            box-shadow: 0 0 8px rgba(229, 57, 53, 0.5);
+        }
+
+        .bar.compared {
+            background: var(--color-done);
+        }
+
+        .bar.sorted {
+            background: var(--color-success);
+        }
+
+        .bar.current {
+            background: var(--color-primary);
+        }
+
+        .bar.pivot {
+            background: #9c27b0;
+        }
+
+        .bar-value {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: #f5f5f5;
+            margin-top: 4px;
+        }
+
+        .bar-index {
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .result-display {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            background: #1d1d1f;
+            color: #4ade80;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+
+        .highlight-box h4 { font-size: 0.85rem; color: #856404; margin-bottom: 6px; }
+        .highlight-box p { font-size: 0.95rem; color: #856404; }
+
+        .next-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .next-box h4 { font-size: 0.85rem; color: #0d47a1; margin-bottom: 6px; }
+        .next-box p { font-size: 0.95rem; color: #0d47a1; }
+
+        .op-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .op-tab {
+            padding: 10px 18px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .op-tab:hover { border-color: var(--color-primary); background: #e3f2fd; }
+        .op-tab.active { background: var(--color-primary); border-color: var(--color-primary); color: white; }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-label { font-size: 0.9rem; color: var(--color-text-muted); }
+
+        .input-field {
+            padding: 10px 14px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 70px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>排序算法 - 交互演示</h1>
+            <p class="subtitle">冒泡、选择、插入、归并、快排、堆排</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <div class="vis-panel">
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="bubble">冒泡</button>
+                        <button class="op-tab" data-op="selection">选择</button>
+                        <button class="op-tab" data-op="insertion">插入</button>
+                        <button class="op-tab" data-op="merge">归并</button>
+                        <button class="op-tab" data-op="quick">快排</button>
+                        <button class="op-tab" data-op="heap">堆排</button>
+                    </div>
+
+                    <div class="control-row">
+                        <button class="btn btn-primary" id="goBtn">开始排序</button>
+                    </div>
+
+                    <div class="sorting-visual" id="sortingVisual">
+                        <div class="bars-container" id="barsContainer"></div>
+                    </div>
+
+                    <div class="result-display" id="resultDisplay">
+                        <span id="resultValue">点击"开始排序"</span>
+                    </div>
+                </div>
+
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前状态</h4>
+                        <p id="stepDescription">点击"开始排序"</p>
+                    </div>
+
+                    <div class="highlight-box" id="whyBox" style="display:none;">
+                        <h4>为什么要这么做？</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-box" id="nextBox" style="display:none;">
+                        <h4>下一步</h4>
+                        <p id="nextText"></p>
+                    </div>
+
+                    <div class="info-box" style="margin-top:16px;">
+                        <h4>图例</h4>
+                        <p>红色=当前比较 | 黄色=已比较 | 绿色=已排序 | 紫色=基准</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="buttonRow"></div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script>
+        var currentOp = "bubble";
+        var steps = [];
+        var stepManager = null;
+        var originalArr = [64, 34, 25, 12, 22, 11, 90];
+
+        function renderBars(state) {
+            var container = document.getElementById("barsContainer");
+            var arr = state.arr;
+            var activeIdx = state.activeIdx;
+            var comparedIdx = state.comparedIdx || [];
+            var sortedIdx = state.sortedIdx || [];
+            var pivotIdx = state.pivotIdx;
+            var currentIdx = state.currentIdx;
+
+            var maxVal = Math.max.apply(null, arr);
+
+            var html = '';
+            for (var i = 0; i < arr.length; i++) {
+                var height = Math.round((arr[i] / maxVal) * 160);
+                var cls = "bar";
+
+                if (sortedIdx.includes(i)) cls += " sorted";
+                else if (i === pivotIdx) cls += " pivot";
+                else if (i === activeIdx) cls += " active";
+                else if (i === currentIdx) cls += " current";
+                else if (comparedIdx.includes(i)) cls += " compared";
+
+                html += '<div class="bar-wrapper">';
+                html += '<div class="' + cls + '" style="height:' + height + 'px;"></div>';
+                html += '<div class="bar-value">' + arr[i] + '</div>';
+                html += '<div class="bar-index">[' + i + ']</div>';
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ==================== 冒泡排序 ====================
+        function genBubbleSteps() {
+            var s = [];
+            var arr = originalArr.slice();
+            var n = arr.length;
+            var sortedIdx = [];
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                description: "原始数组：" + arr.join(", "),
+                why: "冒泡排序：每轮把最大的冒到最后",
+                next: "开始第一轮比较"
+            });
+
+            for (var i = 0; i < n; i++) {
+                for (var j = 0; j < n - i - 1; j++) {
+                    s.push({
+                        state: { arr: arr.slice(), activeIdx: j, comparedIdx: [j, j+1], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                        description: "比较 arr[" + j + "]=" + arr[j] + " 和 arr[" + (j+1) + "]=" + arr[j+1],
+                        why: "相邻元素两两比较",
+                        next: null
+                    });
+
+                    if (arr[j] > arr[j+1]) {
+                        s.push({
+                            state: { arr: arr.slice(), activeIdx: j, comparedIdx: [j, j+1], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                            description: arr[j] + " > " + arr[j+1] + "，交换",
+                            why: "把大的往后挪（冒泡）",
+                            next: null
+                        });
+
+                        var tmp = arr[j]; arr[j] = arr[j+1]; arr[j+1] = tmp;
+
+                        s.push({
+                            state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                            description: "交换后：" + arr.join(", "),
+                            why: null,
+                            next: null
+                        });
+                    } else {
+                        s.push({
+                            state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                            description: arr[j] + " <= " + arr[j+1] + "，不交换",
+                            why: "顺序正确，不需要交换",
+                            next: null
+                        });
+                    }
+                }
+
+                sortedIdx.push(n - i - 1);
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                    description: "第 " + (i+1) + " 轮完成，" + arr[n-i-1] + " 已排序到最后",
+                    why: "最大的元素已经冒到最后",
+                    next: i < n - 1 ? "开始下一轮" : "完成"
+                });
+            }
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: Array.from({length: n}, (_, i) => i), pivotIdx: null, currentIdx: null },
+                description: "排序完成！" + arr.join(", "),
+                why: "所有元素都已排序",
+                next: null
+            });
+
+            return s;
+        }
+
+        // ==================== 选择排序 ====================
+        function genSelectionSteps() {
+            var s = [];
+            var arr = originalArr.slice();
+            var n = arr.length;
+            var sortedIdx = [];
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                description: "原始数组：" + arr.join(", "),
+                why: "选择排序：每轮选择最小的放到已排序末尾",
+                next: "开始第一轮"
+            });
+
+            for (var i = 0; i < n; i++) {
+                var minIdx = i;
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: i, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                    description: "第 " + (i+1) + " 轮：在 " + arr.slice(i).join(", ") + " 中找最小值",
+                    why: "假设当前位置是最小的",
+                    next: "遍历剩余元素找最小值"
+                });
+
+                for (var j = i + 1; j < n; j++) {
+                    s.push({
+                        state: { arr: arr.slice(), activeIdx: i, comparedIdx: [j], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: minIdx },
+                        description: "比较 arr[" + minIdx + "]=" + arr[minIdx] + " 和 arr[" + j + "]=" + arr[j],
+                        why: "更新最小值索引",
+                        next: null
+                    });
+
+                    if (arr[j] < arr[minIdx]) {
+                        minIdx = j;
+                        s.push({
+                            state: { arr: arr.slice(), activeIdx: i, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: minIdx },
+                            description: "更新最小值索引为 " + minIdx,
+                            why: "找到更小的元素",
+                            next: null
+                        });
+                    }
+                }
+
+                if (minIdx !== i) {
+                    s.push({
+                        state: { arr: arr.slice(), activeIdx: i, comparedIdx: [minIdx], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                        description: "交换 arr[" + i + "]=" + arr[i] + " 和 arr[" + minIdx + "]=" + arr[minIdx],
+                        why: "把最小值换到位置 " + i,
+                        next: null
+                    });
+
+                    var tmp = arr[i]; arr[i] = arr[minIdx]; arr[minIdx] = tmp;
+                }
+
+                sortedIdx.push(i);
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                    description: "位置 " + i + " 已排序：" + arr[i],
+                    why: null,
+                    next: i < n - 1 ? "继续下一轮" : "完成"
+                });
+            }
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: Array.from({length: n}, (_, i) => i), pivotIdx: null, currentIdx: null },
+                description: "排序完成！" + arr.join(", "),
+                why: "所有位置都已排序",
+                next: null
+            });
+
+            return s;
+        }
+
+        // ==================== 插入排序 ====================
+        function genInsertionSteps() {
+            var s = [];
+            var arr = originalArr.slice();
+            var n = arr.length;
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [0], pivotIdx: null, currentIdx: null },
+                description: "原始数组：" + arr.join(", ") + "。插入排序：从第二张牌开始，每次插入到已排序部分的正确位置",
+                why: "假设第一张牌已排序",
+                next: "开始插入"
+            });
+
+            for (var i = 1; i < n; i++) {
+                var key = arr[i];
+                var j = i - 1;
+
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: i, comparedIdx: [], sortedIdx: Array.from({length: i}, (_, k) => k), pivotIdx: null, currentIdx: null },
+                    description: "插入 " + key + " 到已排序部分 " + arr.slice(0, i).join(", "),
+                    why: "把 key 和已排序部分从后往前比较",
+                    next: null
+                });
+
+                while (j >= 0 && arr[j] > key) {
+                    s.push({
+                        state: { arr: arr.slice(), activeIdx: i, comparedIdx: [j], sortedIdx: Array.from({length: i}, (_, k) => k), pivotIdx: null, currentIdx: null },
+                        description: "arr[" + j + "]=" + arr[j] + " > " + key + "，往后移",
+                        why: "比 key 大的元素往后挪一位",
+                        next: null
+                    });
+
+                    arr[j+1] = arr[j];
+                    j--;
+                }
+
+                arr[j+1] = key;
+
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: Array.from({length: i+1}, (_, k) => k), pivotIdx: null, currentIdx: null },
+                    description: "把 " + key + " 放到位置 " + (j+1) + "。已排序：" + arr.slice(0, i+1).join(", "),
+                    why: "找到插入位置，放入 key",
+                    next: i < n - 1 ? "继续插入下一个" : "完成"
+                });
+            }
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: Array.from({length: n}, (_, i) => i), pivotIdx: null, currentIdx: null },
+                description: "排序完成！" + arr.join(", "),
+                why: null,
+                next: null
+            });
+
+            return s;
+        }
+
+        // ==================== 归并排序 ====================
+        function genMergeSteps() {
+            var s = [];
+            var arr = originalArr.slice();
+            var n = arr.length;
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null, phase: "start" },
+                description: "原始数组：" + arr.join(", "),
+                why: "归并排序：分而治之。先分割，再合并",
+                next: "开始分割"
+            });
+
+            function merge_sort(arr2, left, right) {
+                if (left >= right) return;
+
+                var mid = Math.floor((left + right) / 2);
+
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null, highlightRange: [left, mid, right] },
+                    description: "分割：[" + left + ".." + mid + "] 和 [" + (mid+1) + ".." + right + "]",
+                    why: "把数组分成两半",
+                    next: "递归处理左半部分"
+                });
+
+                merge_sort(arr2, left, mid);
+                merge_sort(arr2, mid + 1, right);
+
+                // 合并
+                var temp = [];
+                var i2 = left, j = mid + 1;
+
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                    description: "合并 [" + left + ".." + mid + "] 和 [" + (mid+1) + ".." + right + "]",
+                    why: "将两个有序数组合并成一个有序数组",
+                    next: null
+                });
+
+                while (i2 <= mid && j <= right) {
+                    if (arr2[i2] <= arr2[j]) {
+                        temp.push(arr2[i2]);
+                        i2++;
+                    } else {
+                        temp.push(arr2[j]);
+                        j++;
+                    }
+                }
+
+                while (i2 <= mid) { temp.push(arr2[i2]); i2++; }
+                while (j <= right) { temp.push(arr2[j]); j++; }
+
+                for (var k = 0; k < temp.length; k++) {
+                    arr2[left + k] = temp[k];
+                }
+
+                s.push({
+                    state: { arr: arr2.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                    description: "合并结果：" + arr2.slice(left, right+1).join(", "),
+                    why: null,
+                    next: null
+                });
+            }
+
+            merge_sort(arr, 0, n - 1);
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: Array.from({length: n}, (_, i) => i), pivotIdx: null, currentIdx: null },
+                description: "排序完成！" + arr.join(", "),
+                why: null,
+                next: null
+            });
+
+            return s;
+        }
+
+        // ==================== 快速排序 ====================
+        function genQuickSteps() {
+            var s = [];
+            var arr = originalArr.slice();
+            var n = arr.length;
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                description: "原始数组：" + arr.join(", "),
+                why: "快速排序：选基准，分两边，递归排序",
+                next: "开始排序"
+            });
+
+            function quick_sort(arr2, low, high) {
+                if (low >= high) return;
+
+                var pivot = arr2[low];
+                s.push({
+                    state: { arr: arr2.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: low, currentIdx: null },
+                    description: "基准=" + pivot + "（位置 " + low + "）",
+                    why: "选第一个元素作为基准",
+                    next: "把小于基准的放左边，大于基准的放右边"
+                });
+
+                var i = low, j = high;
+                while (i < j) {
+                    while (i < j && arr2[j] >= pivot) {
+                        s.push({
+                            state: { arr: arr2.slice(), activeIdx: null, comparedIdx: [j], sortedIdx: [], pivotIdx: low, currentIdx: null },
+                            description: "从右往左找：arr[" + j + "]=" + arr2[j] + " >= " + pivot,
+                            why: "找比基准小的元素",
+                            next: null
+                        });
+                        j--;
+                    }
+                    if (i < j) {
+                        arr2[i] = arr2[j];
+                        s.push({
+                            state: { arr: arr2.slice(), activeIdx: i, comparedIdx: [], sortedIdx: [], pivotIdx: low, currentIdx: null },
+                            description: "把 " + arr2[j] + " 移到左边",
+                            why: "arr[" + j + "] < 基准，移到左边",
+                            next: null
+                        });
+                        i++;
+                    }
+
+                    while (i < j && arr2[i] < pivot) {
+                        s.push({
+                            state: { arr: arr2.slice(), activeIdx: null, comparedIdx: [i], sortedIdx: [], pivotIdx: low, currentIdx: null },
+                            description: "从左往右找：arr[" + i + "]=" + arr2[i] + " < " + pivot,
+                            why: "找比基准大的元素",
+                            next: null
+                        });
+                        i++;
+                    }
+                    if (i < j) {
+                        arr2[j] = arr2[i];
+                        s.push({
+                            state: { arr: arr2.slice(), activeIdx: j, comparedIdx: [], sortedIdx: [], pivotIdx: low, currentIdx: null },
+                            description: "把 " + arr2[i] + " 移到右边",
+                            why: "arr[" + i + "] >= 基准，移到右边",
+                            next: null
+                        });
+                        j--;
+                    }
+                }
+
+                arr2[i] = pivot;
+
+                s.push({
+                    state: { arr: arr2.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: i, currentIdx: null },
+                    description: "基准 " + pivot + " 放到位置 " + i + "。左边的都小于它，右边的都大于它",
+                    why: "分隔完成，基准在正确位置",
+                    next: null
+                });
+
+                quick_sort(arr2, low, i - 1);
+                quick_sort(arr2, i + 1, high);
+            }
+
+            quick_sort(arr, 0, n - 1);
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: Array.from({length: n}, (_, i) => i), pivotIdx: null, currentIdx: null },
+                description: "排序完成！" + arr.join(", "),
+                why: null,
+                next: null
+            });
+
+            return s;
+        }
+
+        // ==================== 堆排序 ====================
+        function genHeapSteps() {
+            var s = [];
+            var arr = originalArr.slice();
+            var n = arr.length;
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                description: "原始数组：" + arr.join(", "),
+                why: "堆排序：先建堆，然后逐个取出堆顶",
+                next: "先构建最大堆"
+            });
+
+            function sift_down(arr2, i, size) {
+                while (true) {
+                    var largest = i;
+                    var left = 2 * i + 1;
+                    var right = 2 * i + 2;
+
+                    s.push({
+                        state: { arr: arr2.slice(), activeIdx: i, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null, heapSize: size },
+                        description: "下沉节点 " + i + "（值=" + arr2[i] + "）",
+                        why: "比较节点和它的两个子节点",
+                        next: null
+                    });
+
+                    if (left < size && arr2[left] > arr2[largest]) largest = left;
+                    if (right < size && arr2[right] > arr2[largest]) largest = right;
+
+                    if (largest !== i) {
+                        s.push({
+                            state: { arr: arr2.slice(), activeIdx: i, comparedIdx: [largest], sortedIdx: [], pivotIdx: null, currentIdx: null, heapSize: size },
+                            description: "交换 arr[" + i + "]=" + arr2[i] + " 和 arr[" + largest + "]=" + arr2[largest],
+                            why: "子节点更大，上浮子节点",
+                            next: null
+                        });
+
+                        var tmp = arr2[i]; arr2[i] = arr2[largest]; arr2[largest] = tmp;
+                        i = largest;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            // 构建最大堆
+            for (var i2 = Math.floor(n / 2) - 1; i2 >= 0; i2--) {
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: i2, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                    description: "对节点 " + i2 + " 下沉，构建最大堆",
+                    why: "从最后一个非叶子节点开始",
+                    next: null
+                });
+                sift_down(arr, i2, n);
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                    description: "数组状态：" + arr.join(", "),
+                    why: null,
+                    next: null
+                });
+            }
+
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
+                description: "最大堆构建完成！",
+                why: "堆顶是最大元素",
+                next: "开始逐个取出堆顶"
+            });
+
+            // 逐个取出
+            var sortedIdx = [];
+            for (var j = n - 1; j > 0; j--) {
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: 0, comparedIdx: [j], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                    description: "交换堆顶 " + arr[0] + " 和末尾 " + arr[j],
+                    why: "堆顶是最大元素，移到已排序区",
+                    next: null
+                });
+
+                var tmp = arr[0]; arr[0] = arr[j]; arr[j] = tmp;
+                sortedIdx.push(j);
+
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: 0 },
+                    description: "对堆顶下沉，剩余 " + arr.slice(0, j).join(", "),
+                    why: "重新堆化剩余元素",
+                    next: null
+                });
+
+                sift_down(arr, 0, j);
+
+                s.push({
+                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                    description: "数组状态：" + arr.join(", "),
+                    why: null,
+                    next: null
+                });
+            }
+
+            sortedIdx.push(0);
+            s.push({
+                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
+                description: "排序完成！" + arr.join(", "),
+                why: null,
+                next: null
+            });
+
+            return s;
+        }
+
+        function render(state) {
+            renderBars(state);
+
+            var resultEl = document.getElementById("resultValue");
+            resultEl.textContent = "数组：" + (state.arr || originalArr).join(", ");
+
+            var stepInfo = stepManager.getStepInfo();
+            document.getElementById("stepDescription").textContent = stepInfo.description || "";
+
+            if (stepInfo.why) {
+                document.getElementById("whyBox").style.display = "block";
+                document.getElementById("whyText").textContent = stepInfo.why;
+            } else {
+                document.getElementById("whyBox").style.display = "none";
+            }
+
+            if (stepInfo.next) {
+                document.getElementById("nextBox").style.display = "block";
+                document.getElementById("nextText").textContent = stepInfo.next;
+            } else {
+                document.getElementById("nextBox").style.display = "none";
+            }
+
+            updateButtons();
+        }
+
+        function updateButtons() {
+            var btnPrev = document.getElementById("btnPrev");
+            var btnNext = document.getElementById("btnNext");
+            var stepIndicator = document.getElementById("stepIndicator");
+            if (btnPrev) btnPrev.disabled = !stepManager.hasPrev();
+            if (btnNext) btnNext.disabled = !stepManager.hasNext();
+            if (stepIndicator && stepManager) {
+                stepIndicator.textContent = "步骤 " + (stepManager.getCurrentStep() + 1) + " / " + stepManager.getTotalSteps();
+            }
+        }
+
+        function init(op) {
+            currentOp = op;
+            if (op === "bubble") steps = genBubbleSteps();
+            else if (op === "selection") steps = genSelectionSteps();
+            else if (op === "insertion") steps = genInsertionSteps();
+            else if (op === "merge") steps = genMergeSteps();
+            else if (op === "quick") steps = genQuickSteps();
+            else if (op === "heap") steps = genHeapSteps();
+            stepManager = createStepManager(steps, render);
+            stepManager.render();
+            updateButtons();
+        }
+
+        window.addEventListener("DOMContentLoaded", function() {
+            var buttonRow = document.getElementById("buttonRow");
+            buttonRow.innerHTML =
+                '<button class="btn btn-secondary" id="btnPrev" disabled>← 上一步</button>' +
+                '<span class="step-indicator" id="stepIndicator">步骤 1 / 1</span>' +
+                '<button class="btn btn-primary" id="btnNext" disabled>下一步 →</button>' +
+                '<button class="btn btn-secondary" id="btnReset">重置</button>';
+
+            var opTabs = document.querySelectorAll(".op-tab");
+            opTabs.forEach(function(tab) {
+                tab.addEventListener("click", function() {
+                    opTabs.forEach(function(t) { t.classList.remove("active"); });
+                    tab.classList.add("active");
+                    init(tab.getAttribute("data-op"));
+                });
+            });
+
+            document.getElementById("goBtn").addEventListener("click", function() {
+                init(currentOp);
+            });
+
+            document.getElementById("btnPrev").addEventListener("click", function() { stepManager.prev(); updateButtons(); });
+            document.getElementById("btnNext").addEventListener("click", function() { stepManager.next(); updateButtons(); });
+            document.getElementById("btnReset").addEventListener("click", function() { init(currentOp); });
+
+            // 初始化显示
+            var state = { arr: originalArr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null };
+            renderBars(state);
+        });
+    </script>
+</body>
+</html>

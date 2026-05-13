@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python 代码查看器</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        body {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .code-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #252526;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3c3c3c;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .comment {
+            color: #6a9955;
+        }
+
+        .keyword {
+            color: #569cd6;
+        }
+
+        .string {
+            color: #ce9178;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        .number {
+            color: #b5cea8;
+        }
+
+        .class-name {
+            color: #4ec9b0;
+        }
+
+        .decorator {
+            color: #d7ba7d;
+        }
+
+        .file-nav {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #2d2d2d;
+            border-radius: 6px;
+        }
+
+        .file-nav a {
+            color: #569cd6;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+
+        .file-nav a:hover {
+            text-decoration: underline;
+        }
+
+        .file-nav a.active {
+            color: #fff;
+            background: #094771;
+            padding: 4px 8px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="code-container">
+        <h1 id="fileTitle">Python 代码</h1>
+
+        <div class="file-nav" id="fileNav">
+            <!-- 文件导航由 JS 生成 -->
+        </div>
+
+        <pre id="codeDisplay">加载中...</pre>
+    </div>
+
+    <script>
+        // 获取 URL 参数
+        var params = new URLSearchParams(window.location.search);
+        var chapter = params.get('chapter') || '00_python_basics';
+        var file = params.get('file') || 'python_basics.py';
+
+        // 文件列表
+        var files = {
+            '00_python_basics': [
+                { name: 'python_basics.py', title: 'Python 基础语法' },
+                { name: 'data_structures.py', title: '数据结构操作' },
+                { name: 'algorithms.py', title: '算法相关写法' }
+            ],
+            '01_array_and_list': [
+                { name: 'implementation.py', title: '数组与链表实现' }
+            ],
+            '02_linked_list': [
+                { name: 'implementation.py', title: '链表实现' }
+            ],
+            '03_stack': [
+                { name: 'implementation.py', title: '栈实现' }
+            ],
+            '04_queue': [
+                { name: 'implementation.py', title: '队列实现' }
+            ],
+            '05_recursion': [
+                { name: 'implementation.py', title: '递归实现' }
+            ]
+        };
+
+        var chapterName = {
+            '00_python_basics': 'Python 基础',
+            '01_array_and_list': '数组与链表',
+            '02_linked_list': '链表',
+            '03_stack': '栈',
+            '04_queue': '队列',
+            '05_recursion': '递归'
+        };
+
+        // 生成文件导航
+        var nav = document.getElementById('fileNav');
+        var chapterFiles = files[chapter] || [];
+        chapterFiles.forEach(function(f) {
+            var link = document.createElement('a');
+            link.href = '?chapter=' + chapter + '&file=' + f.name;
+            link.textContent = f.title;
+            if (f.name === file) {
+                link.classList.add('active');
+            }
+            nav.appendChild(link);
+        });
+
+        document.getElementById('fileTitle').textContent = chapterName[chapter] + ' - ' + file;
+
+        // 加载文件
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', chapter + '/' + file, true);
+        xhr.responseType = 'text';
+        xhr.setRequestHeader('Content-Type', 'text/plain; charset=utf-8');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // 使用 responseText 确保正确处理 UTF-8 编码
+                document.getElementById('codeDisplay').textContent = xhr.responseText;
+            } else {
+                document.getElementById('codeDisplay').textContent = '文件加载失败: ' + xhr.status;
+            }
+        };
+        xhr.onerror = function() {
+            document.getElementById('codeDisplay').textContent = '网络错误，无法加载文件';
+        };
+        xhr.send();
+    </script>
+</body>
+</html>

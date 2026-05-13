@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据结构交互式学习</title>
+    <link rel="stylesheet" href="shared/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>数据结构交互式可视化学习</h1>
+            <p class="subtitle">为视觉化 + 步进式学习者设计 | 点一下，动一步</p>
+        </header>
+
+        <main class="main">
+            <section class="intro-card">
+                <h2>欢迎使用</h2>
+                <p>这是一个<strong>步进式数据结构学习工具</strong>。不喜欢连续动画？喜欢自己能控制节奏？来这里就对了。</p>
+                <p>每章都有：原理讲解（README）→ Python 实现（implementation.py）→ 交互演示（visualization.html）</p>
+                <p class="highlight">学习方法：先读 README 理解原理，再跑 Python 看打印输出，最后打开 HTML 边点边学。</p>
+            </section>
+
+            <section class="chapters">
+                <h2>章节导航</h2>
+                <div class="chapter-grid" id="chapterGrid">
+                    <!-- 章节卡片由 JS 动态生成 -->
+                </div>
+            </section>
+
+            <section class="learning-path">
+                <h2>推荐学习顺序</h2>
+                <div class="path-container">
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="00">00<br>Python基础</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="01">01<br>数组与链表</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="02">02<br>链表</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="03">03<br>栈</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="04">04<br>队列</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="05">05<br>递归</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="06">06<br>树基础</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="07">07<br>二叉搜索树</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item star" data-chapter="08">08<br>堆 ⭐</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="09">09<br>哈希表</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="10">10<br>图</div>
+                    <div class="path-arrow">→</div>
+                    <div class="path-item" data-chapter="11">11<br>排序算法</div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>数据结构交互式可视化学习项目 | 步进式 · 看得清 · 记得牢</p>
+        </footer>
+    </div>
+
+    <script src="shared/utils.js"></script>
+    <script>
+        // 章节数据
+        var chapters = [
+            {
+                id: "00",
+                name: "Python基础",
+                desc: "Python 语法速成，为看懂代码实现做准备",
+                difficulty: "入门",
+                time: "30分钟",
+                hasPython: true,
+                hasVis: false,
+                path: "00_python_basics/"
+            },
+            {
+                id: "01",
+                name: "数组与链表",
+                desc: "两种最基本的数据结构，原理与适用场景",
+                difficulty: "入门",
+                time: "1小时",
+                hasPython: true,
+                hasVis: true,
+                path: "01_array_and_list/"
+            },
+            {
+                id: "02",
+                name: "链表",
+                desc: "单向链表、双向链表，指针操作是重点",
+                difficulty: "基础",
+                time: "1.5小时",
+                hasPython: true,
+                hasVis: true,
+                path: "02_linked_list/"
+            },
+            {
+                id: "03",
+                name: "栈",
+                desc: "后进先出，括号匹配、函数调用栈",
+                difficulty: "基础",
+                time: "1小时",
+                hasPython: true,
+                hasVis: true,
+                path: "03_stack/"
+            },
+            {
+                id: "04",
+                name: "队列",
+                desc: "先进先出，循环队列是难点",
+                difficulty: "基础",
+                time: "1小时",
+                hasPython: true,
+                hasVis: true,
+                path: "04_queue/"
+            },
+            {
+                id: "05",
+                name: "递归",
+                desc: "调用栈可视化，递归思想是编程基础",
+                difficulty: "中等",
+                time: "1.5小时",
+                hasPython: true,
+                hasVis: true,
+                path: "05_recursion/"
+            },
+            {
+                id: "06",
+                name: "树基础",
+                desc: "树的遍历：前序、中序、后序",
+                difficulty: "中等",
+                time: "1.5小时",
+                hasPython: true,
+                hasVis: true,
+                path: "06_tree_basics/"
+            },
+            {
+                id: "07",
+                name: "二叉搜索树",
+                desc: "BST 插入、删除、查找",
+                difficulty: "中等",
+                time: "2小时",
+                hasPython: true,
+                hasVis: true,
+                path: "07_binary_search_tree/"
+            },
+            {
+                id: "08",
+                name: "堆",
+                desc: "⭐重点章节！插入上浮、删除下沉，建堆过程",
+                difficulty: "较难",
+                time: "2.5小时",
+                hasPython: true,
+                hasVis: true,
+                path: "08_heap/",
+                isStar: true
+            },
+            {
+                id: "09",
+                name: "哈希表",
+                desc: "哈希函数、冲突处理、扩容",
+                difficulty: "中等",
+                time: "1.5小时",
+                hasPython: true,
+                hasVis: true,
+                path: "09_hash_table/"
+            },
+            {
+                id: "10",
+                name: "图",
+                desc: "BFS、DFS、最短路径",
+                difficulty: "较难",
+                time: "2.5小时",
+                hasPython: true,
+                hasVis: true,
+                path: "10_graph/"
+            },
+            {
+                id: "11",
+                name: "排序算法",
+                desc: "冒泡、选择、插入、归并、快排",
+                difficulty: "较难",
+                time: "3小时",
+                hasPython: true,
+                hasVis: true,
+                path: "11_sorting_algorithms/"
+            }
+        ];
+
+        // 从 localStorage 读取进度
+        var progress = {};
+        try {
+            var saved = localStorage.getItem("ds_tutorial_progress");
+            if (saved) {
+                progress = JSON.parse(saved);
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // 章节对应的 Python 文件
+        var pythonFiles = {
+            '00_python_basics': 'python_basics.py',
+            '01_array_and_list': 'implementation.py',
+            '02_linked_list': 'implementation.py',
+            '03_stack': 'implementation.py',
+            '04_queue': 'implementation.py',
+            '05_recursion': 'implementation.py',
+            '06_tree_basics': 'implementation.py'
+        };
+
+        // 渲染章节卡片
+        var grid = document.getElementById("chapterGrid");
+        chapters.forEach(function(ch) {
+            var isDone = progress[ch.id];
+            var card = document.createElement("div");
+            card.className = "chapter-card" + (isDone ? " done" : "") + (ch.isStar ? " star" : "");
+
+            var linksHtml = '<div class="chapter-links">';
+            if (ch.hasPython) {
+                var pyFile = pythonFiles[ch.id] || 'implementation.py';
+                var chapterPath = ch.path.replace(/\/$/, '');
+                linksHtml += '<a href="python_viewer.html?chapter=' + chapterPath + '&file=' + pyFile + '" class="link-btn py-btn" target="_blank">📄 Python</a>';
+            }
+            if (ch.hasVis) {
+                linksHtml += '<a href="' + ch.path + 'visualization.html" class="link-btn vis-btn" target="_blank">🎮 演示</a>';
+            }
+            linksHtml += '<a href="md_viewer.html?chapter=' + ch.id + '" class="link-btn read-btn" target="_blank">📖 原理</a></div>';
+
+            card.innerHTML = '<div class="chapter-num">' + ch.id + '</div>' +
+                '<div class="chapter-info">' +
+                    '<h3>' + ch.name + (ch.isStar ? ' ⭐' : '') + '</h3>' +
+                    '<p>' + ch.desc + '</p>' +
+                    '<div class="chapter-meta">' +
+                        '<span class="tag">' + ch.difficulty + '</span>' +
+                        '<span class="tag">' + ch.time + '</span>' +
+                    '</div>' +
+                '</div>' +
+                linksHtml +
+                '<button class="done-btn" data-id="' + ch.id + '">' + (isDone ? "✓ 已完成" : "标为完成") + '</button>';
+            grid.appendChild(card);
+        });
+
+        // 点击"标为完成"按钮
+        document.querySelectorAll(".done-btn").forEach(function(btn) {
+            btn.addEventListener("click", function() {
+                var id = this.getAttribute("data-id");
+                progress[id] = !progress[id];
+                localStorage.setItem("ds_tutorial_progress", JSON.stringify(progress));
+                this.textContent = progress[id] ? "✓ 已完成" : "标为完成";
+                this.classList.toggle("active", progress[id]);
+                this.closest(".chapter-card").classList.toggle("done", progress[id]);
+            });
+        });
+
+        // 学习路径点击跳转 - 直接跳转到可视化页面
+        document.querySelectorAll(".path-item").forEach(function(item) {
+            item.addEventListener("click", function() {
+                var id = this.getAttribute("data-chapter");
+                var chapter = chapters.find(function(c) { return c.id === id; });
+                if (chapter) {
+                    if (chapter.hasVis) {
+                        // 有可视化页面，直接跳转
+                        window.open(chapter.path + "visualization.html", "_blank");
+                    } else {
+                        // 没有可视化页面，打开 README
+                        window.open(chapter.path + "README.md", "_blank");
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

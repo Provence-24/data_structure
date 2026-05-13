@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .graph-visual {
+            padding: 20px;
+            min-height: 280px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* ===== 节点默认样式 ===== */
+        .node-g circle {
+            fill: #ffffff;
+            stroke: #9e9e9e;
+            stroke-width: 3;
+            transition: fill 0.3s, stroke 0.3s, stroke-width 0.3s;
+        }
+
+        .node-g text {
+            font-family: var(--font-main, system-ui, -apple-system, sans-serif);
+            font-size: 16px;
+            font-weight: 700;
+            fill: #1d1d1f;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            transition: fill 0.3s;
+        }
+
+        /* 红色 = 正在访问 */
+        .node-g.active circle {
+            fill: #ffebee;
+            stroke: #e53935;
+            stroke-width: 4;
+        }
+        .node-g.active text {
+            fill: #e53935;
+        }
+
+        /* 绿色 = 已访问 */
+        .node-g.visited circle {
+            fill: #e8f5e9;
+            stroke: #4caf50;
+            stroke-width: 3;
+        }
+        .node-g.visited text {
+            fill: #2e7d32;
+        }
+
+        /* 黄色 = 排队中 */
+        .node-g.queued circle {
+            fill: #fff9c4;
+            stroke: #fdd835;
+            stroke-width: 3;
+        }
+        .node-g.queued text {
+            fill: #f57f17;
+        }
+
+        /* ===== 边样式 ===== */
+        .edge-g line {
+            stroke: #ccc;
+            stroke-width: 2;
+        }
+
+        .result-display {
+            font-family: var(--font-mono, ui-monospace, monospace);
+            font-size: 1rem;
+            background: #1d1d1f;
+            color: #4ade80;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .queue-display {
+            font-family: var(--font-mono, ui-monospace, monospace);
+            font-size: 0.95rem;
+            background: #f5f5f5;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .queue-display span {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            background: #fff9c4;
+            border: 1px solid #fdd835;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--color-warning, #f5a623);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+
+        .highlight-box h4 { font-size: 0.85rem; color: #856404; margin-bottom: 6px; }
+        .highlight-box p { font-size: 0.95rem; color: #856404; }
+
+        .next-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-primary, #007aff);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .next-box h4 { font-size: 0.85rem; color: #0d47a1; margin-bottom: 6px; }
+        .next-box p { font-size: 0.95rem; color: #0d47a1; }
+
+        .op-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .op-tab {
+            padding: 10px 18px;
+            border: 2px solid var(--color-border, #d2d2d7);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .op-tab:hover { border-color: var(--color-primary, #007aff); background: #e3f2fd; }
+        .op-tab.active { background: var(--color-primary, #007aff); border-color: var(--color-primary, #007aff); color: white; }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-label { font-size: 0.9rem; color: var(--color-text-muted, #6e6e73); }
+
+        .input-field {
+            padding: 10px 14px;
+            border: 2px solid var(--color-border, #d2d2d7);
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 70px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>图 - 交互演示</h1>
+            <p class="subtitle">BFS 广度优先 | DFS 深度优先</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <div class="vis-panel">
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="bfs">BFS 广度优先</button>
+                        <button class="op-tab" data-op="dfs">DFS 深度优先</button>
+                    </div>
+
+                    <div class="control-row">
+                        <span class="control-label">起始节点：</span>
+                        <select id="startSelect" class="input-field" style="width:80px;">
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                        <button class="btn btn-primary" id="goBtn" style="margin-left:8px;">执行</button>
+                    </div>
+
+                    <div class="graph-visual" id="graphVisual">
+                        <svg class="svg-container" viewBox="0 0 400 320" id="svgGraph"></svg>
+                    </div>
+
+                    <div class="result-display" id="resultDisplay">
+                        <span id="resultValue">点击"执行"开始遍历</span>
+                    </div>
+                </div>
+
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前状态</h4>
+                        <p id="stepDescription">点击"执行"开始遍历</p>
+                    </div>
+
+                    <div class="highlight-box" id="whyBox" style="display:none;">
+                        <h4>为什么要这么做？</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-box" id="nextBox" style="display:none;">
+                        <h4>下一步</h4>
+                        <p id="nextText"></p>
+                    </div>
+
+                    <div class="queue-display" id="queueDisplay" style="display:none;">
+                        <strong>队列/栈：</strong>
+                        <span id="queueValue"></span>
+                    </div>
+
+                    <div class="info-box" style="margin-top:16px;">
+                        <h4>颜色说明</h4>
+                        <p>
+                            <span style="display:inline-block;width:12px;height:12px;background:#fff9c4;border:2px solid #fdd835;border-radius:50%;vertical-align:middle;margin-right:4px;"></span>黄色 = 排队中　
+                            <span style="display:inline-block;width:12px;height:12px;background:#ffebee;border:2px solid #e53935;border-radius:50%;vertical-align:middle;margin-right:4px;"></span>红色 = 正在访问　
+                            <span style="display:inline-block;width:12px;height:12px;background:#e8f5e9;border:2px solid #4caf50;border-radius:50%;vertical-align:middle;margin-right:4px;"></span>绿色 = 已访问
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="buttonRow"></div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script>
+        var currentOp = "bfs";
+        var steps = [];
+        var stepManager = null;
+
+        // 无向图
+        var graphData = {
+            'A': ['B', 'C'],
+            'B': ['A', 'C', 'D'],
+            'C': ['A', 'B', 'D'],
+            'D': ['B', 'C']
+        };
+
+        // 节点位置
+        var nodePos = {
+            'A': { x: 200, y: 60 },
+            'B': { x: 100, y: 160 },
+            'C': { x: 300, y: 160 },
+            'D': { x: 200, y: 260 }
+        };
+
+        var edgeList = [
+            ['A', 'B'], ['A', 'C'],
+            ['B', 'C'], ['B', 'D'],
+            ['C', 'D']
+        ];
+
+        function buildSVG() {
+            var svg = document.getElementById('svgGraph');
+            var html = '';
+
+            // 画边（先画边，让节点覆盖在边上面）
+            for (var i = 0; i < edgeList.length; i++) {
+                var e = edgeList[i];
+                var from = nodePos[e[0]];
+                var to = nodePos[e[1]];
+                html += '<g class="edge-g" id="eg-' + i + '">' +
+                    '<line x1="' + from.x + '" y1="' + from.y + '" x2="' + to.x + '" y2="' + to.y + '"/>' +
+                    '</g>';
+            }
+
+            // 画节点
+            for (var key in nodePos) {
+                var p = nodePos[key];
+                html += '<g class="node-g" id="ng-' + key + '">' +
+                    '<circle cx="' + p.x + '" cy="' + p.y + '" r="28"/>' +
+                    '<text x="' + p.x + '" y="' + p.y + '">' + key + '</text>' +
+                    '</g>';
+            }
+
+            svg.innerHTML = html;
+        }
+
+        function setNodeClass(nodeId, cls) {
+            var el = document.getElementById('ng-' + nodeId);
+            if (!el) return;
+            // 重置 class 列表，只保留 node-g 和指定的状态类
+            el.setAttribute('class', 'node-g' + (cls ? ' ' + cls : ''));
+        }
+
+        function render(state) {
+            var discovered = state.discovered || [];
+            var visited = state.visited || [];
+            var current = state.current || null;
+            var queue = state.queue || [];
+
+            // 1. 先清掉所有节点的状态类
+            for (var key in nodePos) {
+                setNodeClass(key, '');
+            }
+
+            // 2. 按优先级应用（visited < queued < active）
+            //    后面的会覆盖前面的，所以 active 必须最后设
+            for (var i = 0; i < visited.length; i++) {
+                if (visited[i] !== current) {
+                    setNodeClass(visited[i], 'visited');
+                }
+            }
+            for (var i = 0; i < discovered.length; i++) {
+                if (discovered[i] !== current) {
+                    setNodeClass(discovered[i], 'queued');
+                }
+            }
+            if (current) {
+                setNodeClass(current, 'active');
+            }
+
+            // 队列/栈显示
+            var qEl = document.getElementById('queueDisplay');
+            var qVal = document.getElementById('queueValue');
+            if (queue.length > 0) {
+                qEl.style.display = 'block';
+                qVal.innerHTML = queue.map(function(v) { return '<span>' + v + '</span>'; }).join('');
+            } else {
+                qEl.style.display = 'none';
+            }
+
+            // 结果显示
+            var resultEl = document.getElementById('resultValue');
+            if (state.path && state.path.length > 0) {
+                resultEl.textContent = '遍历顺序：' + state.path.join(' → ');
+            } else {
+                resultEl.textContent = '点击执行开始';
+            }
+
+            // 步骤信息
+            var info = stepManager.getStepInfo();
+            document.getElementById('stepDescription').textContent = info.description || '';
+
+            if (info.why) {
+                document.getElementById('whyBox').style.display = 'block';
+                document.getElementById('whyText').textContent = info.why;
+            } else {
+                document.getElementById('whyBox').style.display = 'none';
+            }
+
+            if (info.next) {
+                document.getElementById('nextBox').style.display = 'block';
+                document.getElementById('nextText').textContent = info.next;
+            } else {
+                document.getElementById('nextBox').style.display = 'none';
+            }
+
+            updateButtons();
+        }
+
+        function genBFS(start) {
+            var s = [];
+            // 初始状态：所有节点都是空的
+            s.push({
+                state: { discovered: [], visited: [], current: null, queue: [], path: [] },
+                description: 'BFS 准备从 ' + start + ' 开始',
+                why: 'BFS 用队列，一层层往外扩展',
+                next: '将起点 ' + start + ' 入队'
+            });
+
+            var discovered = {};
+            var visited = {};
+            var queue = [start];
+            var order = [];
+
+            discovered[start] = true;
+
+            s.push({
+                state: { discovered: Object.keys(discovered), visited: Object.keys(visited), current: null, queue: queue.slice(), path: order.slice() },
+                description: '起点 ' + start + ' 入队',
+                why: 'BFS 用队列，一层层往外扩展',
+                next: '队首出队进行访问'
+            });
+
+            while (queue.length > 0) {
+                var v = queue.shift();
+                delete discovered[v];
+                visited[v] = true;
+                order.push(v);
+
+                s.push({
+                    state: { discovered: Object.keys(discovered), visited: Object.keys(visited), current: v, queue: queue.slice(), path: order.slice() },
+                    description: '出队，访问节点 ' + v,
+                    why: '从队列取出当前节点进行处理',
+                    next: '将 ' + v + ' 的未发现邻居入队'
+                });
+
+                var neighbors = graphData[v] || [];
+                var added = [];
+                for (var i = 0; i < neighbors.length; i++) {
+                    var n = neighbors[i];
+                    if (!discovered[n] && !visited[n]) {
+                        discovered[n] = true;
+                        queue.push(n);
+                        added.push(n);
+                    }
+                }
+
+                if (added.length > 0) {
+                    s.push({
+                        state: { discovered: Object.keys(discovered), visited: Object.keys(visited), current: v, queue: queue.slice(), path: order.slice() },
+                        description: '邻居 ' + added.join(', ') + ' 入队',
+                        why: 'BFS 扩展邻居，层层扩散',
+                        next: queue.length > 0 ? '队首出队' : '队列为空，结束'
+                    });
+                }
+            }
+
+            s.push({
+                state: { discovered: [], visited: Object.keys(visited), current: null, queue: [], path: order.slice() },
+                description: 'BFS 完成！遍历顺序：' + order.join(' → '),
+                why: '队列为空，所有可达节点已访问',
+                next: null
+            });
+
+            return s;
+        }
+
+        function genDFS(start) {
+            var s = [];
+            // 初始状态：所有节点都是空的
+            s.push({
+                state: { discovered: [], visited: [], current: null, queue: [], path: [] },
+                description: 'DFS 准备从 ' + start + ' 开始',
+                why: 'DFS 用栈，深入优先',
+                next: '将起点 ' + start + ' 压栈'
+            });
+
+            var discovered = {};
+            var visited = {};
+            var stack = [start];
+            var order = [];
+
+            discovered[start] = true;
+
+            s.push({
+                state: { discovered: Object.keys(discovered), visited: Object.keys(visited), current: null, queue: stack.slice(), path: order.slice() },
+                description: '起点 ' + start + ' 压栈',
+                why: 'DFS 用栈，深入优先',
+                next: '栈顶出栈进行访问'
+            });
+
+            while (stack.length > 0) {
+                var v = stack.pop();
+                delete discovered[v];
+                visited[v] = true;
+                order.push(v);
+
+                s.push({
+                    state: { discovered: Object.keys(discovered), visited: Object.keys(visited), current: v, queue: stack.slice(), path: order.slice() },
+                    description: '出栈，访问节点 ' + v,
+                    why: 'DFS 深度优先，弹出栈顶节点',
+                    next: '将 ' + v + ' 的未发现邻居压栈'
+                });
+
+                var neighbors = graphData[v] || [];
+                var added = [];
+                for (var i = neighbors.length - 1; i >= 0; i--) {
+                    var n = neighbors[i];
+                    if (!discovered[n] && !visited[n]) {
+                        discovered[n] = true;
+                        stack.push(n);
+                        added.push(n);
+                    }
+                }
+
+                if (added.length > 0) {
+                    s.push({
+                        state: { discovered: Object.keys(discovered), visited: Object.keys(visited), current: v, queue: stack.slice(), path: order.slice() },
+                        description: '邻居 ' + added.join(', ') + ' 压栈',
+                        why: 'DFS 深入，压入待处理节点',
+                        next: stack.length > 0 ? '栈顶出栈' : '栈为空，结束'
+                    });
+                }
+            }
+
+            s.push({
+                state: { discovered: [], visited: Object.keys(visited), current: null, queue: [], path: order.slice() },
+                description: 'DFS 完成！遍历顺序：' + order.join(' → '),
+                why: '栈为空，所有可达节点已访问',
+                next: null
+            });
+
+            return s;
+        }
+
+        function updateButtons() {
+            var btnPrev = document.getElementById('btnPrev');
+            var btnNext = document.getElementById('btnNext');
+            var indicator = document.getElementById('stepIndicator');
+            if (btnPrev) btnPrev.disabled = !stepManager.hasPrev();
+            if (btnNext) btnNext.disabled = !stepManager.hasNext();
+            if (indicator && stepManager) {
+                indicator.textContent = '步骤 ' + (stepManager.getCurrentStep() + 1) + ' / ' + stepManager.getTotalSteps();
+            }
+        }
+
+        // 备用 stepManager（避免外部 utils.js 缺失时崩溃）
+        function fallbackStepManager(stepsArr, renderFn) {
+            var idx = 0;
+            return {
+                getCurrentStep: function() { return idx; },
+                getTotalSteps: function() { return stepsArr.length; },
+                getStepInfo: function() { return stepsArr[idx] || {}; },
+                hasPrev: function() { return idx > 0; },
+                hasNext: function() { return idx < stepsArr.length - 1; },
+                next: function() { if (idx < stepsArr.length - 1) { idx++; renderFn(stepsArr[idx].state); } },
+                prev: function() { if (idx > 0) { idx--; renderFn(stepsArr[idx].state); } },
+                render: function() { renderFn(stepsArr[idx].state); },
+                reset: function() { idx = 0; renderFn(stepsArr[idx].state); }
+            };
+        }
+
+        function init(op, start) {
+            currentOp = op;
+            steps = (op === 'bfs') ? genBFS(start) : genDFS(start);
+            // 优先使用外部 createStepManager，没有就用 fallback
+            if (typeof createStepManager === 'function') {
+                stepManager = createStepManager(steps, render);
+            } else {
+                stepManager = fallbackStepManager(steps, render);
+            }
+            stepManager.render();
+            updateButtons();
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            buildSVG();
+
+            var btnRow = document.getElementById('buttonRow');
+            btnRow.innerHTML =
+                '<button class="btn btn-secondary" id="btnPrev" disabled>← 上一步</button>' +
+                '<span class="step-indicator" id="stepIndicator">步骤 1 / 1</span>' +
+                '<button class="btn btn-primary" id="btnNext" disabled>下一步 →</button>' +
+                '<button class="btn btn-secondary" id="btnReset">重置</button>';
+
+            var tabs = document.querySelectorAll('.op-tab');
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    tabs.forEach(function(t) { t.classList.remove('active'); });
+                    tab.classList.add('active');
+                    var start = document.getElementById('startSelect').value;
+                    init(tab.getAttribute('data-op'), start);
+                });
+            });
+
+            document.getElementById('goBtn').addEventListener('click', function() {
+                var start = document.getElementById('startSelect').value;
+                init(currentOp, start);
+            });
+
+            document.getElementById('btnPrev').addEventListener('click', function() { stepManager.prev(); updateButtons(); });
+            document.getElementById('btnNext').addEventListener('click', function() { stepManager.next(); updateButtons(); });
+            document.getElementById('btnReset').addEventListener('click', function() {
+                // 重置：重新生成 steps 并回到第 0 步
+                var start = document.getElementById('startSelect').value;
+                init(currentOp, start);
+            });
+
+            init('bfs', 'A');
+        });
+    </script>
+</body>
+</html>

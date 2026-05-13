@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>链表 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .data-display {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+        }
+
+        .linked-list-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 40px 20px;
+            min-height: 160px;
+            position: relative;
+        }
+
+        .ll-node {
+            display: flex;
+            align-items: center;
+        }
+
+        .ll-node-box {
+            display: flex;
+            border: 3px solid var(--color-idle);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .ll-node-box.active {
+            border-color: var(--color-active);
+            background: #ffebee;
+            transform: scale(1.08);
+            box-shadow: 0 0 16px rgba(229, 57, 53, 0.5);
+        }
+
+        .ll-node-box.done {
+            border-color: var(--color-done);
+            background: #fffde7;
+        }
+
+        .ll-node-box.new {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .ll-node-value {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .ll-node-box.active .ll-node-value {
+            color: var(--color-active);
+        }
+
+        .ll-node-pointer {
+            width: 32px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f7;
+            border-left: 2px solid #e0e0e3;
+            font-size: 1rem;
+            color: #6e6e73;
+        }
+
+        .ll-node-box.active .ll-node-pointer {
+            background: #ffcdd2;
+            border-left-color: var(--color-active);
+        }
+
+        .ll-arrow {
+            font-size: 1.8rem;
+            color: var(--color-idle);
+            margin: 0 4px;
+            transition: color 0.3s;
+        }
+
+        .ll-arrow.active {
+            color: var(--color-active);
+        }
+
+        .ll-null {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            color: #999;
+            padding: 10px 16px;
+            background: #f5f5f7;
+            border-radius: 6px;
+            border: 2px dashed #ccc;
+        }
+
+        .pointer-label {
+            position: absolute;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .pointer-label.head {
+            top: 8px;
+            left: 20px;
+        }
+
+        .pointer-label.tail {
+            bottom: 8px;
+            right: 20px;
+        }
+
+        .pointer-labels {
+            position: relative;
+            height: 30px;
+        }
+
+        .info-box {
+            background: #f5f5f7;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        .step-code {
+            background: #263238;
+            color: #aed581;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        .op-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .op-tab {
+            padding: 10px 18px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+        }
+
+        .op-tab:hover {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+        }
+
+        .op-tab.active {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+
+        .highlight-box h4 {
+            font-size: 0.85rem;
+            color: #856404;
+            margin-bottom: 6px;
+        }
+
+        .highlight-box p {
+            font-size: 0.95rem;
+            color: #856404;
+            line-height: 1.5;
+        }
+
+        .next-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .next-box h4 {
+            font-size: 0.85rem;
+            color: #0d47a1;
+            margin-bottom: 6px;
+        }
+
+        .next-box p {
+            font-size: 0.95rem;
+            color: #0d47a1;
+            line-height: 1.5;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            color: var(--color-text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>链表 - 指针操作演示</h1>
+            <p class="subtitle">重点演示：指针的重连操作 | 点击"下一步"前进一步</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <div class="vis-panel">
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="prepend">头部插入</button>
+                        <button class="op-tab" data-op="append">尾部插入</button>
+                        <button class="op-tab" data-op="insert">中间插入</button>
+                        <button class="op-tab" data-op="delete">删除节点</button>
+                        <button class="op-tab" data-op="reverse">反转链表</button>
+                    </div>
+
+                    <div class="data-display" id="dataDisplay">
+链表状态将显示在这里
+                    </div>
+
+                    <div class="pointer-labels">
+                        <span class="pointer-label head" id="headLabel">head</span>
+                        <span class="pointer-label tail" id="tailLabel">tail</span>
+                    </div>
+
+                    <div class="linked-list-visual" id="visualArea">
+                    </div>
+                </div>
+
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前步骤</h4>
+                        <p id="stepDescription">点击"下一步"开始演示</p>
+                        <div class="step-code" id="stepCode"></div>
+                    </div>
+
+                    <div class="highlight-box" id="whyBox" style="display:none;">
+                        <h4>为什么要这么做？</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-box" id="nextBox" style="display:none;">
+                        <h4>下一步将做什么？</h4>
+                        <p id="nextText"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="inputRow">
+                <span class="control-label" id="valueLabel">插入值：</span>
+                <input type="number" class="input-field" id="valueInput" value="15" min="1" max="999">
+                <span class="control-label" id="indexLabel" style="margin-left: 12px; display:none;">位置：</span>
+                <input type="number" class="input-field" id="indexInput" value="1" min="0" max="5" style="display:none;">
+                <button class="btn btn-secondary" id="restartBtn" style="margin-left: 12px;">重新开始</button>
+            </div>
+            <div class="control-row" id="buttonRow">
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script src="visualization.js"></script>
+</body>
+</html>

@@ -1,0 +1,656 @@
+/* ==========================================================================
+   数据结构交互式学习项目 - 统一样式
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. 基础变量与重置
+   -------------------------------------------------------------------------- */
+:root {
+    /* 颜色方案 - 柔和但区分度高 */
+    --color-bg: #f5f5f7;
+    --color-surface: #ffffff;
+    --color-border: #e0e0e3;
+    --color-text: #1d1d1f;
+    --color-text-muted: #6e6e73;
+
+    /* 高亮颜色 - 状态高亮用 */
+    --color-active: #e53935;      /* 当前操作 - 红色 */
+    --color-done: #fdd835;         /* 已操作过 - 黄色 */
+    --color-idle: #9e9e9e;        /* 无关元素 - 灰色 */
+
+    /* 功能色 */
+    --color-primary: #007aff;
+    --color-success: #34c759;
+    --color-warning: #ff9500;
+
+    /* 字体 */
+    --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SF Mono", "Fira Code", "Consolas", monospace;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* --------------------------------------------------------------------------
+   2. 通用布局
+   -------------------------------------------------------------------------- */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* --------------------------------------------------------------------------
+   3. 主页 index.html 样式
+   -------------------------------------------------------------------------- */
+.header {
+    text-align: center;
+    padding: 40px 20px;
+    background: var(--color-surface);
+    border-radius: 16px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+}
+
+.main {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.intro-card {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.intro-card h2 {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+}
+
+.intro-card p {
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+}
+
+.intro-card .highlight {
+    background: #fff3cd;
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 4px solid var(--color-warning);
+    color: #856404;
+    margin-top: 12px;
+}
+
+/* --------------------------------------------------------------------------
+   4. 章节卡片
+   -------------------------------------------------------------------------- */
+.chapters h2 {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+}
+
+.chapter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.chapter-card {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 2px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.chapter-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.chapter-card.done {
+    border-color: var(--color-success);
+}
+
+.chapter-card.star {
+    border-color: var(--color-warning);
+}
+
+.chapter-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 8px;
+}
+
+.chapter-info h3 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+}
+
+.chapter-info p {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    margin-bottom: 10px;
+}
+
+.chapter-meta {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.tag {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    background: var(--color-bg);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+}
+
+.chapter-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.link-btn {
+    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: white;
+    transition: opacity 0.2s;
+}
+
+.link-btn:hover {
+    opacity: 0.85;
+}
+
+.py-btn {
+    background: #3776ab;
+}
+
+.vis-btn {
+    background: var(--color-success);
+}
+
+.read-btn {
+    background: var(--color-text-muted);
+}
+
+.done-btn {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid var(--color-border);
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    transition: all 0.2s;
+}
+
+.done-btn:hover {
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.done-btn.active {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: white;
+}
+
+/* --------------------------------------------------------------------------
+   5. 学习路径
+   -------------------------------------------------------------------------- */
+.learning-path {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    margin-bottom: 30px;
+}
+
+.learning-path h2 {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+}
+
+.path-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.path-item {
+    background: var(--color-bg);
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+    min-width: 60px;
+}
+
+.path-item:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.path-item.star {
+    border-color: var(--color-warning);
+    background: #fff8e1;
+}
+
+.path-arrow {
+    color: var(--color-text-muted);
+    font-size: 1.2rem;
+}
+
+/* --------------------------------------------------------------------------
+   6. 页脚
+   -------------------------------------------------------------------------- */
+.footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+}
+
+/* --------------------------------------------------------------------------
+   7. 可视化页面通用布局
+   -------------------------------------------------------------------------- */
+.vis-header {
+    background: var(--color-surface);
+    padding: 20px 24px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.vis-header h1 {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+}
+
+.vis-header .subtitle {
+    font-size: 0.95rem;
+}
+
+.vis-main {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    min-height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vis-explanation {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border-left: 4px solid var(--color-primary);
+}
+
+.vis-explanation h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: var(--color-text-muted);
+}
+
+.vis-explanation p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.vis-controls {
+    background: var(--color-surface);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    position: sticky;
+    bottom: 20px;
+    z-index: 100;
+}
+
+.control-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.control-row:last-child {
+    margin-bottom: 0;
+}
+
+.control-label {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    margin-right: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   8. 按钮样式
+   -------------------------------------------------------------------------- */
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-main);
+}
+
+.btn-primary {
+    background: var(--color-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-primary:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover {
+    background: #e8e8e8;
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   9. 步骤指示器
+   -------------------------------------------------------------------------- */
+.step-indicator {
+    font-size: 1rem;
+    padding: 8px 16px;
+    background: var(--color-bg);
+    border-radius: 6px;
+    color: var(--color-text-muted);
+}
+
+.step-indicator strong {
+    color: var(--color-text);
+}
+
+/* --------------------------------------------------------------------------
+   10. 输入框
+   -------------------------------------------------------------------------- */
+.input-field {
+    padding: 10px 14px;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: var(--font-main);
+    width: 120px;
+    transition: border-color 0.2s;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+/* --------------------------------------------------------------------------
+   11. SVG 可视化元素
+   -------------------------------------------------------------------------- */
+.node {
+    transition: fill 0.2s, stroke 0.2s;
+}
+
+.node-active {
+    fill: var(--color-active);
+    stroke: #b71c1c;
+    stroke-width: 3;
+}
+
+.node-done {
+    fill: var(--color-done);
+    stroke: #f9a825;
+    stroke-width: 2;
+}
+
+.node-idle {
+    fill: var(--color-idle);
+    stroke: #757575;
+    stroke-width: 1;
+}
+
+.node-label {
+    font-family: var(--font-main);
+    font-size: 16px;
+    font-weight: 600;
+    fill: white;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+}
+
+.edge {
+    stroke: #9e9e9e;
+    stroke-width: 2;
+}
+
+.edge-active {
+    stroke: var(--color-active);
+    stroke-width: 3;
+}
+
+/* --------------------------------------------------------------------------
+   12. 数组柱状图
+   -------------------------------------------------------------------------- */
+.bar {
+    transition: fill 0.2s;
+}
+
+.bar-sorted {
+    fill: var(--color-success);
+}
+
+.bar-current {
+    fill: var(--color-active);
+}
+
+.bar-compared {
+    fill: var(--color-done);
+}
+
+.bar-unsorted {
+    fill: var(--color-idle);
+}
+
+.bar-label {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    fill: var(--color-text);
+    text-anchor: middle;
+}
+
+/* --------------------------------------------------------------------------
+   13. 二叉树节点
+   -------------------------------------------------------------------------- */
+.tree-node {
+    fill: var(--color-idle);
+    stroke: #757575;
+    stroke-width: 2;
+}
+
+.tree-node-active {
+    fill: var(--color-active);
+    stroke: #b71c1c;
+    stroke-width: 3;
+}
+
+.tree-node-done {
+    fill: var(--color-done);
+    stroke: #f9a825;
+    stroke-width: 2;
+}
+
+.tree-node-text {
+    font-family: var(--font-main);
+    font-size: 16px;
+    font-weight: 600;
+    fill: white;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+}
+
+.tree-edge {
+    stroke: #9e9e9e;
+    stroke-width: 2;
+}
+
+/* --------------------------------------------------------------------------
+   14. 链表节点
+   -------------------------------------------------------------------------- */
+.ll-node {
+    fill: var(--color-surface);
+    stroke: var(--color-idle);
+    stroke-width: 2;
+}
+
+.ll-node-active {
+    fill: #ffebee;
+    stroke: var(--color-active);
+    stroke-width: 3;
+}
+
+.ll-node-done {
+    fill: #fffde7;
+    stroke: var(--color-done);
+    stroke-width: 2;
+}
+
+.ll-node-head {
+    stroke: var(--color-primary);
+    stroke-width: 3;
+}
+
+.ll-arrow {
+    stroke: var(--color-idle);
+    stroke-width: 2;
+    fill: none;
+    marker-end: url(#arrowhead);
+}
+
+.ll-text {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    fill: var(--color-text);
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+/* --------------------------------------------------------------------------
+   15. 操作选择标签
+   -------------------------------------------------------------------------- */
+.op-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.op-tab {
+    padding: 8px 16px;
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    font-family: var(--font-main);
+}
+
+.op-tab:hover {
+    border-color: var(--color-primary);
+}
+
+.op-tab.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+/* --------------------------------------------------------------------------
+   16. 响应式
+   -------------------------------------------------------------------------- */
+@media (max-width: 600px) {
+    .header h1 {
+        font-size: 1.5rem;
+    }
+
+    .chapter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .path-container {
+        justify-content: center;
+    }
+
+    .control-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn {
+        width: 100%;
+    }
+}

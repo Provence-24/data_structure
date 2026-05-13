@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>堆 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .vis-panel {
+            flex: 1;
+            min-width: 340px;
+        }
+
+        /* ============ 树形可视化 ============ */
+        .tree-wrapper {
+            position: relative;
+            width: 100%;
+            min-height: 320px;
+            padding: 20px 10px;
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .tree-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .tree-edge {
+            stroke: #bbb;
+            stroke-width: 2;
+            transition: all 0.3s;
+        }
+        .tree-edge.highlight {
+            stroke: var(--color-primary, #1976d2);
+            stroke-width: 3;
+        }
+        .tree-edge.swap {
+            stroke: var(--color-warning, #e65100);
+            stroke-width: 3;
+            stroke-dasharray: 6 4;
+        }
+        .tree-node {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #999;
+            border-radius: 50%;
+            font-family: var(--font-mono, monospace);
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: white;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        .tree-node .idx {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #888;
+            font-weight: 400;
+        }
+        .tree-node.new {
+            border-color: #2e7d32;
+            background: #c8e6c9;
+            color: #1b5e20;
+            box-shadow: 0 0 14px rgba(76, 175, 80, 0.6);
+        }
+        .tree-node.compare {
+            border-color: #1976d2;
+            background: #bbdefb;
+            color: #0d47a1;
+            transform: translate(-50%, -50%) scale(1.12);
+            box-shadow: 0 0 14px rgba(25, 118, 210, 0.5);
+        }
+        .tree-node.parent {
+            border-color: #6a1b9a;
+            background: #e1bee7;
+            color: #4a148c;
+        }
+        .tree-node.swap {
+            border-color: #e65100;
+            background: #ffe0b2;
+            color: #bf360c;
+            transform: translate(-50%, -50%) scale(1.18);
+            box-shadow: 0 0 18px rgba(230, 81, 0, 0.6);
+        }
+        .tree-node.sorted {
+            border-color: #4caf50;
+            background: #e8f5e9;
+            color: #2e7d32;
+            opacity: 0.75;
+        }
+        .tree-node.removed {
+            opacity: 0.25;
+            border-style: dashed;
+        }
+
+        /* ============ 数组显示 ============ */
+        .array-display {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding: 14px;
+            background: #1d1d1f;
+            border-radius: 10px;
+        }
+        .array-cell {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #555;
+            border-radius: 6px;
+            font-family: var(--font-mono, monospace);
+            font-size: 1rem;
+            font-weight: 600;
+            background: #2a2a2a;
+            color: #f5f5f5;
+            transition: all 0.3s;
+        }
+        .array-cell .idx-label {
+            position: absolute;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #999;
+        }
+        .array-cell.new {
+            border-color: #4caf50;
+            background: #2d4a2d;
+            color: #a5d6a7;
+        }
+        .array-cell.compare {
+            border-color: #2196f3;
+            background: #1a3a5a;
+            color: #90caf9;
+        }
+        .array-cell.parent {
+            border-color: #9c27b0;
+            background: #3a1a3a;
+            color: #ce93d8;
+        }
+        .array-cell.swap {
+            border-color: #ff9800;
+            background: #4a3a1a;
+            color: #ffcc80;
+        }
+        .array-cell.sorted {
+            border-color: #4caf50;
+            background: #1a3a1a;
+            color: #81c784;
+            opacity: 0.6;
+        }
+        .array-cell.removed {
+            opacity: 0.2;
+        }
+        .array-divider {
+            width: 2px;
+            background: #666;
+            margin: 0 4px;
+            align-self: stretch;
+        }
+
+        /* ============ 信息面板 ============ */
+        .info-box {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .info-box p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid #f57c00;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+        }
+        .highlight-box h4 {
+            font-size: 0.85rem;
+            color: #856404;
+            margin-bottom: 6px;
+        }
+        .highlight-box p {
+            font-size: 0.95rem;
+            color: #856404;
+        }
+        .next-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1976d2;
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+        }
+        .next-box h4 {
+            font-size: 0.85rem;
+            color: #0d47a1;
+            margin-bottom: 6px;
+        }
+        .next-box p {
+            font-size: 0.95rem;
+            color: #0d47a1;
+        }
+
+        /* ============ 操作切换 ============ */
+        .op-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .op-tab {
+            padding: 10px 18px;
+            border: 2px solid var(--color-border, #d2d2d7);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: var(--font-main, system-ui);
+            transition: all 0.2s;
+        }
+        .op-tab:hover {
+            border-color: #1976d2;
+            background: #e3f2fd;
+        }
+        .op-tab.active {
+            background: #1976d2;
+            border-color: #1976d2;
+            color: white;
+        }
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .control-label {
+            font-size: 0.9rem;
+            color: var(--color-text-muted, #666);
+        }
+        .input-field {
+            padding: 9px 14px;
+            border: 2px solid var(--color-border, #d2d2d7);
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 80px;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>堆 - 交互演示</h1>
+            <p class="subtitle">最大堆 | 上浮 (sift-up) · 下沉 (sift-down) · 堆排序</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <div class="vis-panel">
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="siftup">插入 (上浮)</button>
+                        <button class="op-tab" data-op="siftdown">删除堆顶 (下沉)</button>
+                        <button class="op-tab" data-op="heapsort">堆排序</button>
+                    </div>
+
+                    <div class="control-row" id="inputRow">
+                        <span class="control-label" id="inputLabel">要插入的值:</span>
+                        <input type="number" class="input-field" id="valueInput" value="15" min="1" max="99">
+                        <button class="btn btn-primary" id="goBtn">执行</button>
+                    </div>
+
+                    <div class="tree-wrapper" id="treeWrapper">
+                        <svg class="tree-svg" id="treeSvg"></svg>
+                    </div>
+
+                    <div class="array-display" id="arrayDisplay"></div>
+
+                    <div class="legend">
+                        <div class="legend-item"><span class="legend-dot" style="border-color:#2e7d32;background:#c8e6c9;"></span>新元素</div>
+                        <div class="legend-item"><span class="legend-dot" style="border-color:#1976d2;background:#bbdefb;"></span>当前节点</div>
+                        <div class="legend-item"><span class="legend-dot" style="border-color:#6a1b9a;background:#e1bee7;"></span>父/子节点</div>
+                        <div class="legend-item"><span class="legend-dot" style="border-color:#e65100;background:#ffe0b2;"></span>正在交换</div>
+                        <div class="legend-item"><span class="legend-dot" style="border-color:#4caf50;background:#e8f5e9;"></span>已排序</div>
+                    </div>
+                </div>
+
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前操作</h4>
+                        <p id="stepDescription">点击"执行"开始演示</p>
+                    </div>
+
+                    <div class="highlight-box" id="whyBox" style="display:none;">
+                        <h4>为什么这么做</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-box" id="nextBox" style="display:none;">
+                        <h4>下一步</h4>
+                        <p id="nextText"></p>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>堆的索引关系 (0-indexed)</h4>
+                        <p style="font-family:var(--font-mono, monospace); font-size:0.9rem;">
+                            父节点: <b>(i - 1) / 2</b><br>
+                            左子节点: <b>2i + 1</b><br>
+                            右子节点: <b>2i + 2</b>
+                        </p>
+                    </div>
+
+                    <div class="info-box">
+                        <h4>最大堆性质</h4>
+                        <p>任意节点的值 ≥ 它所有子节点的值。<br>因此堆顶 (索引 0) 始终是最大值。</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="buttonRow"></div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script>
+        // ============ 工具函数 ============
+        function parentIdx(i) { return Math.floor((i - 1) / 2); }
+        function leftIdx(i) { return 2 * i + 1; }
+        function rightIdx(i) { return 2 * i + 2; }
+        function levelOf(i) { return Math.floor(Math.log2(i + 1)); }
+
+        // ============ 渲染：树形布局 ============
+        // 思路: 第 L 层有 2^L 个槽位, 第 i 个节点 (从 0 开始) 在第 levelOf(i) 层
+        // 该层节点中的索引是 i - (2^L - 1), 该层共 2^L 个槽位
+        function computeNodePosition(i, totalNodes, width, height) {
+            var L = levelOf(i);
+            var maxLevel = levelOf(totalNodes - 1);
+            var posInLevel = i - (Math.pow(2, L) - 1);
+            var slotsInLevel = Math.pow(2, L);
+
+            // 横向: 均匀分布在该层
+            var x = width * (posInLevel + 0.5) / slotsInLevel;
+
+            // 纵向: 按层均匀分布
+            var levelGap = maxLevel === 0 ? 0 : (height - 60) / maxLevel;
+            var y = 40 + L * levelGap;
+
+            return { x: x, y: y };
+        }
+
+        function renderTree(heap, state, options) {
+            options = options || {};
+            var wrapper = document.getElementById("treeWrapper");
+            var svg = document.getElementById("treeSvg");
+
+            // 清空旧节点 (保留 svg)
+            var oldNodes = wrapper.querySelectorAll(".tree-node");
+            oldNodes.forEach(function(n) { n.remove(); });
+            svg.innerHTML = "";
+
+            var rect = wrapper.getBoundingClientRect();
+            var W = rect.width || 500;
+            var H = Math.max(rect.height, 280);
+
+            // 仅渲染 0..size-1 范围内的节点, 之后的视为已排序/已移除
+            var size = options.heapSize != null ? options.heapSize : heap.length;
+            var totalForLayout = Math.max(heap.length, size);
+
+            // 先画边
+            for (var i = 1; i < heap.length; i++) {
+                if (heap[i] == null) continue;
+                var p = parentIdx(i);
+                if (heap[p] == null) continue;
+
+                var posC = computeNodePosition(i, totalForLayout, W, H);
+                var posP = computeNodePosition(p, totalForLayout, W, H);
+
+                var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", posP.x);
+                line.setAttribute("y1", posP.y);
+                line.setAttribute("x2", posC.x);
+                line.setAttribute("y2", posC.y);
+                line.setAttribute("class", "tree-edge");
+
+                // 高亮当前比较的边
+                if (state.swapA != null && state.swapB != null) {
+                    if ((i === state.swapA && p === state.swapB) || (i === state.swapB && p === state.swapA) ||
+                        (p === state.swapA && i === state.swapB)) {
+                        line.setAttribute("class", "tree-edge swap");
+                    }
+                } else if (state.compareIdx != null && state.parentOrChild != null) {
+                    if ((i === state.compareIdx && p === state.parentOrChild) ||
+                        (p === state.compareIdx && i === state.parentOrChild)) {
+                        line.setAttribute("class", "tree-edge highlight");
+                    }
+                }
+
+                svg.appendChild(line);
+            }
+
+            // 再画节点
+            for (var j = 0; j < heap.length; j++) {
+                if (heap[j] == null) continue;
+                var pos = computeNodePosition(j, totalForLayout, W, H);
+
+                var nodeEl = document.createElement("div");
+                nodeEl.className = "tree-node";
+
+                if (state.newIdx === j) nodeEl.classList.add("new");
+                else if (state.swapA === j || state.swapB === j) nodeEl.classList.add("swap");
+                else if (state.compareIdx === j) nodeEl.classList.add("compare");
+                else if (state.parentOrChild === j) nodeEl.classList.add("parent");
+                else if (state.sortedSet && state.sortedSet.indexOf(j) !== -1) nodeEl.classList.add("sorted");
+
+                if (j >= size) nodeEl.classList.add("removed");
+
+                nodeEl.style.left = pos.x + "px";
+                nodeEl.style.top = pos.y + "px";
+                nodeEl.innerHTML = heap[j] + '<span class="idx">' + j + '</span>';
+
+                wrapper.appendChild(nodeEl);
+            }
+        }
+
+        function renderArray(heap, state, options) {
+            options = options || {};
+            var container = document.getElementById("arrayDisplay");
+            var size = options.heapSize != null ? options.heapSize : heap.length;
+
+            var html = "";
+            for (var i = 0; i < heap.length; i++) {
+                if (i === size && size < heap.length) {
+                    html += '<div class="array-divider"></div>';
+                }
+                if (heap[i] == null) continue;
+
+                var cls = "array-cell";
+                if (state.newIdx === i) cls += " new";
+                else if (state.swapA === i || state.swapB === i) cls += " swap";
+                else if (state.compareIdx === i) cls += " compare";
+                else if (state.parentOrChild === i) cls += " parent";
+                else if (state.sortedSet && state.sortedSet.indexOf(i) !== -1) cls += " sorted";
+
+                if (i >= size) cls += " removed";
+
+                html += '<div class="' + cls + '">' + heap[i] +
+                    '<span class="idx-label">' + i + '</span></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        // ============ 步骤生成: 上浮 ============
+        function genSiftUpSteps(initial, newValue) {
+            var steps = [];
+            var heap = initial.slice();
+
+            // step 1: 把新元素放到末尾
+            heap.push(newValue);
+            var idx = heap.length - 1;
+
+            steps.push({
+                heap: heap.slice(),
+                state: { newIdx: idx },
+                description: "把新值 " + newValue + " 放到数组末尾,索引 = " + idx,
+                why: "插入新元素时,先放到完全二叉树的最后一个位置,这样能保持完全二叉树的结构",
+                next: "现在它可能破坏堆性质 (比父节点大),需要上浮"
+            });
+
+            while (idx > 0) {
+                var p = parentIdx(idx);
+
+                steps.push({
+                    heap: heap.slice(),
+                    state: { compareIdx: idx, parentOrChild: p },
+                    description: "比较: 当前节点 " + heap[idx] + " (索引 " + idx + ")  vs  父节点 " + heap[p] + " (索引 " + p + ")",
+                    why: "父节点索引 = (" + idx + " - 1) / 2 = " + p,
+                    next: heap[idx] > heap[p] ? "当前 > 父节点,需要交换" : "当前 ≤ 父节点,上浮结束"
+                });
+
+                if (heap[idx] > heap[p]) {
+                    steps.push({
+                        heap: heap.slice(),
+                        state: { swapA: idx, swapB: p },
+                        description: "交换 heap[" + idx + "] = " + heap[idx] + "  ↔  heap[" + p + "] = " + heap[p],
+                        why: "最大堆中,父节点必须 ≥ 子节点。当前更大,所以上浮",
+                        next: null
+                    });
+
+                    var t = heap[idx]; heap[idx] = heap[p]; heap[p] = t;
+                    idx = p;
+
+                    steps.push({
+                        heap: heap.slice(),
+                        state: { compareIdx: idx },
+                        description: "交换完成,当前节点上浮到索引 " + idx,
+                        why: null,
+                        next: idx === 0 ? "已到达根节点,上浮结束" : "继续与新的父节点比较"
+                    });
+                } else {
+                    break;
+                }
+            }
+
+            steps.push({
+                heap: heap.slice(),
+                state: {},
+                description: "✓ 上浮完成! 堆数组: [" + heap.join(", ") + "]",
+                why: "新元素已就位,所有父子关系都满足最大堆性质",
+                next: null
+            });
+
+            return steps;
+        }
+
+        // ============ 步骤生成: 下沉 (删除堆顶) ============
+        function genSiftDownSteps(initial) {
+            var steps = [];
+            var heap = initial.slice();
+            var maxVal = heap[0];
+            var lastVal = heap[heap.length - 1];
+
+            steps.push({
+                heap: heap.slice(),
+                state: { compareIdx: 0 },
+                description: "取出堆顶元素 " + maxVal + " (这是堆中最大值)",
+                why: "最大堆的堆顶 (索引 0) 永远是最大值。删除堆顶就是 extract-max 操作",
+                next: "用末尾元素 " + lastVal + " 填补堆顶位置"
+            });
+
+            // 用末尾元素替换堆顶, 然后弹出末尾
+            heap[0] = lastVal;
+            heap.pop();
+
+            steps.push({
+                heap: heap.slice(),
+                state: { newIdx: 0 },
+                description: "末尾元素 " + lastVal + " 移到堆顶,数组长度减 1",
+                why: "保持完全二叉树结构。但此时堆顶可能比子节点小,破坏了堆性质",
+                next: "需要下沉:让堆顶向下找到正确位置"
+            });
+
+            var idx = 0;
+            var n = heap.length;
+
+            while (true) {
+                var l = leftIdx(idx);
+                var r = rightIdx(idx);
+
+                if (l >= n) {
+                    // 没有子节点
+                    steps.push({
+                        heap: heap.slice(),
+                        state: {},
+                        description: "索引 " + idx + " 没有子节点,下沉结束",
+                        why: "已经是叶子节点,无法再下沉",
+                        next: null
+                    });
+                    break;
+                }
+
+                // 找到较大的子节点
+                var bigger = l;
+                if (r < n && heap[r] > heap[l]) bigger = r;
+
+                var childDesc = (r < n)
+                    ? "左子 " + heap[l] + " (索引 " + l + "),  右子 " + heap[r] + " (索引 " + r + ")"
+                    : "只有左子 " + heap[l] + " (索引 " + l + ")";
+
+                steps.push({
+                    heap: heap.slice(),
+                    state: { compareIdx: idx, parentOrChild: bigger },
+                    description: "当前节点 " + heap[idx] + " (索引 " + idx + ")  vs  " + childDesc,
+                    why: "找子节点中较大的那个 = " + heap[bigger] + " (索引 " + bigger + "),与当前比较",
+                    next: heap[idx] < heap[bigger] ? "当前 < 较大子节点,需要交换" : "当前 ≥ 所有子节点,下沉结束"
+                });
+
+                if (heap[idx] < heap[bigger]) {
+                    steps.push({
+                        heap: heap.slice(),
+                        state: { swapA: idx, swapB: bigger },
+                        description: "交换 heap[" + idx + "] = " + heap[idx] + "  ↔  heap[" + bigger + "] = " + heap[bigger],
+                        why: "较大的子节点上浮成为新父节点,当前节点下沉",
+                        next: null
+                    });
+
+                    var t = heap[idx]; heap[idx] = heap[bigger]; heap[bigger] = t;
+                    idx = bigger;
+
+                    steps.push({
+                        heap: heap.slice(),
+                        state: { compareIdx: idx },
+                        description: "交换完成,继续从索引 " + idx + " 向下",
+                        why: null,
+                        next: "继续与新的子节点比较"
+                    });
+                } else {
+                    steps.push({
+                        heap: heap.slice(),
+                        state: {},
+                        description: "✓ 当前节点已经 ≥ 两个子节点,下沉结束",
+                        why: "堆性质恢复",
+                        next: null
+                    });
+                    break;
+                }
+            }
+
+            steps.push({
+                heap: heap.slice(),
+                state: {},
+                description: "✓ 删除完成! 已取出最大值 " + maxVal + ",剩余堆: [" + heap.join(", ") + "]",
+                why: "extract-max 操作完毕",
+                next: null
+            });
+
+            return steps;
+        }
+
+        // ============ 步骤生成: 堆排序 ============
+        function genHeapSortSteps(initial) {
+            var steps = [];
+            var heap = initial.slice();
+            var n = heap.length;
+            var sorted = [];
+
+            steps.push({
+                heap: heap.slice(),
+                state: {},
+                description: "初始数组: [" + heap.join(", ") + "]",
+                why: "堆排序分两步: 1) 把数组建成最大堆  2) 反复取堆顶放到末尾",
+                next: "第一步: 自底向上建堆"
+            });
+
+            // ---- 阶段 1: 建堆 (从最后一个非叶子节点开始下沉) ----
+            var startBuild = Math.floor(n / 2) - 1;
+
+            steps.push({
+                heap: heap.slice(),
+                state: { compareIdx: startBuild },
+                description: "建堆: 从最后一个非叶子节点 (索引 " + startBuild + ") 开始,依次对每个节点执行下沉",
+                why: "叶子节点本身就是合法的堆。最后一个非叶子节点的索引 = n/2 - 1 = " + startBuild,
+                next: "对索引 " + startBuild + " 执行下沉"
+            });
+
+            for (var i = startBuild; i >= 0; i--) {
+                steps.push({
+                    heap: heap.slice(),
+                    state: { compareIdx: i },
+                    description: "对索引 " + i + " (值 " + heap[i] + ") 执行下沉",
+                    why: null,
+                    next: null
+                });
+
+                // 内联下沉
+                var cur = i;
+                while (true) {
+                    var l = leftIdx(cur);
+                    var r = rightIdx(cur);
+                    if (l >= n) break;
+
+                    var bigger = l;
+                    if (r < n && heap[r] > heap[l]) bigger = r;
+
+                    if (heap[cur] < heap[bigger]) {
+                        steps.push({
+                            heap: heap.slice(),
+                            state: { swapA: cur, swapB: bigger },
+                            description: "  下沉: 交换 heap[" + cur + "] = " + heap[cur] + "  ↔  heap[" + bigger + "] = " + heap[bigger],
+                            why: null,
+                            next: null
+                        });
+                        var t = heap[cur]; heap[cur] = heap[bigger]; heap[bigger] = t;
+                        cur = bigger;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            steps.push({
+                heap: heap.slice(),
+                state: {},
+                description: "✓ 建堆完成: [" + heap.join(", ") + "]",
+                why: "现在堆顶 " + heap[0] + " 是最大值",
+                next: "第二步: 反复把堆顶交换到末尾"
+            });
+
+            // ---- 阶段 2: 反复取堆顶 ----
+            for (var end = n - 1; end > 0; end--) {
+                steps.push({
+                    heap: heap.slice(),
+                    state: { swapA: 0, swapB: end, sortedSet: sorted.slice() },
+                    description: "交换堆顶 heap[0] = " + heap[0] + "  ↔  末尾 heap[" + end + "] = " + heap[end],
+                    why: "堆顶是当前堆中的最大值,把它放到末尾就是排序的最终位置",
+                    next: null
+                });
+
+                var tt = heap[0]; heap[0] = heap[end]; heap[end] = tt;
+                sorted.unshift(end);
+
+                steps.push({
+                    heap: heap.slice(),
+                    state: { sortedSet: sorted.slice() },
+                    description: "索引 " + end + " 已就位 (值 " + heap[end] + "),堆大小缩小到 " + end,
+                    why: "已排序区: 索引 " + end + " 到 " + (n-1) + ",这部分不再参与堆操作",
+                    next: end > 1 ? "对新的堆顶执行下沉,恢复堆性质" : "排序完成"
+                });
+
+                // 在前 end 个元素中对 0 执行下沉
+                var cur2 = 0;
+                while (true) {
+                    var l2 = leftIdx(cur2);
+                    var r2 = rightIdx(cur2);
+                    if (l2 >= end) break;
+
+                    var bigger2 = l2;
+                    if (r2 < end && heap[r2] > heap[l2]) bigger2 = r2;
+
+                    if (heap[cur2] < heap[bigger2]) {
+                        steps.push({
+                            heap: heap.slice(),
+                            state: { swapA: cur2, swapB: bigger2, sortedSet: sorted.slice() },
+                            description: "  下沉: 交换 heap[" + cur2 + "] = " + heap[cur2] + "  ↔  heap[" + bigger2 + "] = " + heap[bigger2],
+                            why: null,
+                            next: null,
+                            heapSize: end
+                        });
+                        var ttt = heap[cur2]; heap[cur2] = heap[bigger2]; heap[bigger2] = ttt;
+                        cur2 = bigger2;
+                    } else {
+                        break;
+                    }
+                }
+
+                if (end > 1) {
+                    steps.push({
+                        heap: heap.slice(),
+                        state: { sortedSet: sorted.slice() },
+                        description: "  下沉结束,新堆顶 = " + heap[0],
+                        why: null,
+                        next: null,
+                        heapSize: end
+                    });
+                }
+            }
+
+            sorted.unshift(0);
+            steps.push({
+                heap: heap.slice(),
+                state: { sortedSet: sorted.slice() },
+                description: "✓ 堆排序完成! 结果: [" + heap.join(", ") + "]",
+                why: "时间复杂度 O(n log n),空间复杂度 O(1)",
+                next: null,
+                heapSize: 0
+            });
+
+            return steps;
+        }
+
+        // ============ 主控制 ============
+        var currentOp = "siftup";
+        var stepManager = null;
+        var initialHeap = [16, 14, 10, 8, 7, 9, 3];  // 一个合法的最大堆,用于上浮/下沉演示
+        var initialUnsorted = [4, 10, 3, 5, 1, 8, 7];  // 用于堆排序
+
+        function render(state, stepData) {
+            // stepData 是完整 step 对象（含 heap），state 是 steps[currentStep].state
+            var heap = (stepData && stepData.heap) ? stepData.heap : (state && state.heap);
+            var stateData = state || {};
+            stepData = stepData || {};
+            var heapSize = stepData.heapSize != null ? stepData.heapSize : stateData.heapSize;
+
+            if (!heap) {
+                console.warn("render: heap is undefined", { state: state, stepData: stepData });
+                return;
+            }
+
+            renderTree(heap, stateData, { heapSize: heapSize });
+            renderArray(heap, stateData, { heapSize: heapSize });
+
+            var stepInfo = stepManager.getStepInfo();
+            document.getElementById("stepDescription").textContent = stepInfo.description || "";
+
+            if (stepInfo.why) {
+                document.getElementById("whyBox").style.display = "block";
+                document.getElementById("whyText").textContent = stepInfo.why;
+            } else {
+                document.getElementById("whyBox").style.display = "none";
+            }
+
+            if (stepInfo.next) {
+                document.getElementById("nextBox").style.display = "block";
+                document.getElementById("nextText").textContent = stepInfo.next;
+            } else {
+                document.getElementById("nextBox").style.display = "none";
+            }
+
+            updateButtons();
+        }
+
+        function updateButtons() {
+            var btnPrev = document.getElementById("btnPrev");
+            var btnNext = document.getElementById("btnNext");
+            var ind = document.getElementById("stepIndicator");
+            if (btnPrev) btnPrev.disabled = !stepManager.hasPrev();
+            if (btnNext) btnNext.disabled = !stepManager.hasNext();
+            if (ind) ind.textContent = "步骤 " + (stepManager.getCurrentStep() + 1) + " / " + stepManager.getTotalSteps();
+        }
+
+        function init(op, value) {
+            currentOp = op;
+            var steps;
+
+            // 切换输入提示
+            var inputRow = document.getElementById("inputRow");
+            var inputLabel = document.getElementById("inputLabel");
+            if (op === "siftup") {
+                inputRow.style.display = "flex";
+                inputLabel.textContent = "要插入的值:";
+                steps = genSiftUpSteps(initialHeap, value);
+            } else if (op === "siftdown") {
+                inputRow.style.display = "none";
+                steps = genSiftDownSteps(initialHeap);
+            } else if (op === "heapsort") {
+                inputRow.style.display = "none";
+                steps = genHeapSortSteps(initialUnsorted);
+            }
+
+            // 适配可能没有 createStepManager 的情况
+            if (typeof createStepManager === "function") {
+                stepManager = createStepManager(steps, render);
+            } else {
+                stepManager = makeStepManager(steps, render);
+            }
+            stepManager.render();
+            updateButtons();
+        }
+
+        // 简易 step manager 回退
+        function makeStepManager(steps, renderFn) {
+            var cur = 0;
+            var info = {};
+            return {
+                next: function() { if (cur < steps.length - 1) { cur++; info = steps[cur]; renderFn(steps[cur]); } },
+                prev: function() { if (cur > 0) { cur--; info = steps[cur]; renderFn(steps[cur]); } },
+                hasNext: function() { return cur < steps.length - 1; },
+                hasPrev: function() { return cur > 0; },
+                getCurrentStep: function() { return cur; },
+                getTotalSteps: function() { return steps.length; },
+                getStepInfo: function() { return steps[cur] || {}; },
+                render: function() { info = steps[cur]; renderFn(steps[cur]); }
+            };
+        }
+
+        window.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("buttonRow").innerHTML =
+                '<button class="btn btn-secondary" id="btnPrev" disabled>← 上一步</button>' +
+                '<span class="step-indicator" id="stepIndicator">步骤 1 / 1</span>' +
+                '<button class="btn btn-primary" id="btnNext" disabled>下一步 →</button>' +
+                '<button class="btn btn-secondary" id="btnReset">重置</button>';
+
+            var opTabs = document.querySelectorAll(".op-tab");
+            opTabs.forEach(function(tab) {
+                tab.addEventListener("click", function() {
+                    opTabs.forEach(function(t) { t.classList.remove("active"); });
+                    tab.classList.add("active");
+                    var val = parseInt(document.getElementById("valueInput").value) || 15;
+                    init(tab.getAttribute("data-op"), val);
+                });
+            });
+
+            document.getElementById("goBtn").addEventListener("click", function() {
+                var val = parseInt(document.getElementById("valueInput").value) || 15;
+                init(currentOp, val);
+            });
+
+            document.getElementById("btnPrev").addEventListener("click", function() {
+                stepManager.prev(); updateButtons();
+            });
+            document.getElementById("btnNext").addEventListener("click", function() {
+                stepManager.next(); updateButtons();
+            });
+            document.getElementById("btnReset").addEventListener("click", function() {
+                var val = parseInt(document.getElementById("valueInput").value) || 15;
+                init(currentOp, val);
+            });
+
+            // 窗口大小变化时重绘
+            window.addEventListener("resize", function() {
+                if (stepManager) stepManager.render();
+            });
+
+            init("siftup", 15);
+        });
+    </script>
+</body>
+</html>

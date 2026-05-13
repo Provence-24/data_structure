@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>栈 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .data-display {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+        }
+
+        .stack-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            min-height: 280px;
+            position: relative;
+        }
+
+        .stack-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .stack-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6e6e73;
+            margin-bottom: 4px;
+        }
+
+        .stack-top-label {
+            position: absolute;
+            top: -30px;
+            right: -60px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-active);
+            background: #ffebee;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .stack-frame {
+            width: 120px;
+            border: 3px solid var(--color-idle);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 8px;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: 4px;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .stack-item {
+            width: 80px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 6px;
+            background: white;
+            border: 2px solid var(--color-idle);
+            color: #333;
+            transition: all 0.2s;
+        }
+
+        .stack-item.active {
+            background: var(--color-active);
+            border-color: #b71c1c;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 0 12px rgba(229, 57, 53, 0.5);
+        }
+
+        .stack-item.done {
+            background: var(--color-done);
+            border-color: #f9a825;
+            color: #333;
+        }
+
+        .stack-item.new {
+            background: #e3f2fd;
+            border-color: var(--color-primary);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stack-item.popping {
+            animation: popOut 0.3s ease;
+        }
+
+        @keyframes popOut {
+            to {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.8);
+            }
+        }
+
+        .stack-base {
+            width: 140px;
+            height: 12px;
+            background: var(--color-idle);
+            border-radius: 0 0 8px 8px;
+            margin-top: -2px;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        .step-code {
+            background: #263238;
+            color: #aed581;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        .op-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .op-tab {
+            padding: 10px 18px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+        }
+
+        .op-tab:hover {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+        }
+
+        .op-tab.active {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+
+        .highlight-box h4 {
+            font-size: 0.85rem;
+            color: #856404;
+            margin-bottom: 6px;
+        }
+
+        .highlight-box p {
+            font-size: 0.95rem;
+            color: #856404;
+            line-height: 1.5;
+        }
+
+        .next-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .next-box h4 {
+            font-size: 0.85rem;
+            color: #0d47a1;
+            margin-bottom: 6px;
+        }
+
+        .next-box p {
+            font-size: 0.95rem;
+            color: #0d47a1;
+            line-height: 1.5;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            color: var(--color-text-muted);
+        }
+
+        .bracket-input {
+            padding: 10px 14px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: var(--font-mono);
+            width: 200px;
+        }
+
+        .bracket-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>栈 - 交互演示</h1>
+            <p class="subtitle">后进先出（LIFO）| 点击"下一步"前进一步</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <div class="vis-panel">
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="push">push 入栈</button>
+                        <button class="op-tab" data-op="pop">pop 出栈</button>
+                        <button class="op-tab" data-op="bracket">括号匹配</button>
+                    </div>
+
+                    <div class="data-display" id="dataDisplay">
+栈状态将显示在这里
+                    </div>
+
+                    <div class="stack-visual" id="visualArea">
+                        <div class="stack-container">
+                            <span class="stack-top-label" id="topLabel">top</span>
+                            <div class="stack-frame" id="stackFrame">
+                                <!-- 栈元素动态生成 -->
+                            </div>
+                            <div class="stack-base"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前步骤</h4>
+                        <p id="stepDescription">点击"下一步"开始演示</p>
+                        <div class="step-code" id="stepCode"></div>
+                    </div>
+
+                    <div class="highlight-box" id="whyBox" style="display:none;">
+                        <h4>为什么要这么做？</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-box" id="nextBox" style="display:none;">
+                        <h4>下一步将做什么？</h4>
+                        <p id="nextText"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="inputRow">
+                <span class="control-label" id="valueLabel">入栈值：</span>
+                <input type="number" class="input-field" id="valueInput" value="10" min="1" max="999">
+                <button class="btn btn-secondary" id="restartBtn" style="margin-left: 12px;">重新开始</button>
+            </div>
+            <div class="control-row" id="buttonRow">
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script src="visualization.js"></script>
+</body>
+</html>

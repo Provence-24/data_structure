@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>队列 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .data-display {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+        }
+
+        .queue-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            min-height: 200px;
+        }
+
+        /* 普通队列 - 水平条形 */
+        .simple-queue-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .simple-queue-label {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            display: flex;
+            gap: 40px;
+        }
+
+        .simple-queue-row {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .simple-cell {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--color-idle);
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: white;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .simple-cell.empty {
+            background: #f5f5f5;
+            color: #ccc;
+        }
+
+        .simple-cell.has-value {
+            background: white;
+        }
+
+        .simple-cell.active {
+            border-color: var(--color-active);
+            background: #ffebee;
+            color: var(--color-active);
+            transform: scale(1.1);
+            box-shadow: 0 0 12px rgba(229, 57, 53, 0.4);
+        }
+
+        .simple-cell.front-cell {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+        }
+
+        .simple-cell.front-cell .cell-label {
+            background: var(--color-primary);
+        }
+
+        .simple-cell.rear-cell {
+            border-color: var(--color-success);
+            background: #e8f5e9;
+        }
+
+        .simple-cell.rear-cell .cell-label {
+            background: var(--color-success);
+        }
+
+        .simple-cell.front-rear-cell {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+        }
+
+        .cell-index {
+            position: absolute;
+            bottom: -18px;
+            font-size: 0.65rem;
+            color: #999;
+        }
+
+        .cell-label {
+            position: absolute;
+            top: -22px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 3px;
+            color: white;
+        }
+
+        .arrow-space {
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 1.2rem;
+        }
+
+        /* 循环队列 - 环形 */
+        .queue-ring {
+            position: relative;
+            width: 280px;
+            height: 280px;
+        }
+
+        .queue-cell {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--color-idle);
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: white;
+            transition: all 0.3s;
+        }
+
+        .queue-cell.empty {
+            background: #f5f5f5;
+            color: #ccc;
+        }
+
+        .queue-cell.active {
+            border-color: var(--color-active);
+            background: #ffebee;
+            color: var(--color-active);
+            transform: scale(1.1);
+            box-shadow: 0 0 16px rgba(229, 57, 53, 0.5);
+        }
+
+        .queue-cell.front-marker {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+        }
+
+        .queue-cell.rear-marker {
+            border-color: var(--color-success);
+            background: #e8f5e9;
+        }
+
+        .queue-cell.front-rear-marker {
+            border-color: var(--color-primary);
+            background: linear-gradient(135deg, #e3f2fd 50%, #e8f5e9 50%);
+        }
+
+        .cell-index {
+            position: absolute;
+            bottom: -18px;
+            font-size: 0.65rem;
+            color: #999;
+        }
+
+        .front-label, .rear-label {
+            position: absolute;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .front-label {
+            background: var(--color-primary);
+            color: white;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .rear-label {
+            background: var(--color-success);
+            color: white;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .queue-info {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-item .label {
+            font-size: 0.8rem;
+            color: #6e6e73;
+        }
+
+        .info-item .value {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+
+        .info-item.front .value {
+            color: var(--color-primary);
+        }
+
+        .info-item.rear .value {
+            color: var(--color-success);
+        }
+
+        .info-item.size .value {
+            color: var(--color-text);
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-box h4 {
+            font-size: 0.85rem;
+            color: #6e6e73;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-box p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #1d1d1f;
+        }
+
+        .step-code {
+            background: #263238;
+            color: #aed581;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+
+        .op-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .op-tab {
+            padding: 10px 18px;
+            border: 2px solid var(--color-border);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-family: var(--font-main);
+            transition: all 0.2s;
+        }
+
+        .op-tab:hover {
+            border-color: var(--color-primary);
+            background: #e3f2fd;
+        }
+
+        .op-tab.active {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+
+        .highlight-box {
+            background: #fff3cd;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+
+        .highlight-box h4 {
+            font-size: 0.85rem;
+            color: #856404;
+            margin-bottom: 6px;
+        }
+
+        .highlight-box p {
+            font-size: 0.95rem;
+            color: #856404;
+            line-height: 1.5;
+        }
+
+        .next-box {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .next-box h4 {
+            font-size: 0.85rem;
+            color: #0d47a1;
+            margin-bottom: 6px;
+        }
+
+        .next-box p {
+            font-size: 0.95rem;
+            color: #0d47a1;
+            line-height: 1.5;
+        }
+
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            color: var(--color-text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>队列 - 交互演示</h1>
+            <p class="subtitle">普通队列 vs 循环队列 | 点击"下一步"前进一步</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <div class="vis-panel">
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="simple-enqueue">普通队列入队</button>
+                        <button class="op-tab" data-op="simple-dequeue">普通队列出队</button>
+                        <button class="op-tab" data-op="circular-enqueue">循环队列入队</button>
+                        <button class="op-tab" data-op="circular-dequeue">循环队列出队</button>
+                        <button class="op-tab" data-op="ring">循环队列完整演示</button>
+                    </div>
+
+                    <div class="data-display" id="dataDisplay">
+队列状态将显示在这里
+                    </div>
+
+                    <div class="queue-visual" id="visualArea">
+                    </div>
+
+                    <div class="queue-info" id="queueInfo">
+                        <div class="info-item front">
+                            <div class="label">front</div>
+                            <div class="value" id="frontValue">0</div>
+                        </div>
+                        <div class="info-item rear">
+                            <div class="label">rear</div>
+                            <div class="value" id="rearValue">0</div>
+                        </div>
+                        <div class="info-item size">
+                            <div class="label">元素数</div>
+                            <div class="value" id="sizeValue">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前步骤</h4>
+                        <p id="stepDescription">点击"下一步"开始演示</p>
+                        <div class="step-code" id="stepCode"></div>
+                    </div>
+
+                    <div class="highlight-box" id="whyBox" style="display:none;">
+                        <h4>为什么要这么做？</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-box" id="nextBox" style="display:none;">
+                        <h4>下一步将做什么？</h4>
+                        <p id="nextText"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="inputRow">
+                <span class="control-label" id="valueLabel">入队值：</span>
+                <input type="number" class="input-field" id="valueInput" value="10" min="1" max="999">
+                <button class="btn btn-secondary" id="restartBtn" style="margin-left: 12px;">重新开始</button>
+            </div>
+            <div class="control-row" id="buttonRow">
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script src="visualization.js"></script>
+</body>
+</html>

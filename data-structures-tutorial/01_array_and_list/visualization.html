@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数组与链表 - 交互演示</title>
+    <link rel="stylesheet" href="../shared/style.css">
+    <style>
+        /* 本地样式 */
+        .vis-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .vis-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .info-box {
+            background: #f0f0f5;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .info-box h4 {
+            font-size: 0.9rem;
+            color: #6e6e73;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .data-display {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            background: #1d1d1f;
+            color: #f5f5f7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .array-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            padding: 20px;
+            min-height: 120px;
+        }
+
+        .array-cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--color-idle);
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .array-cell.active {
+            border-color: var(--color-active);
+            background: var(--color-active);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 12px rgba(229, 57, 53, 0.5);
+        }
+
+        .array-cell.done {
+            border-color: var(--color-done);
+            background: var(--color-done);
+            color: #333;
+        }
+
+        .array-cell.empty {
+            background: #e0e0e3;
+            color: #999;
+        }
+
+        .array-index {
+            position: absolute;
+            bottom: -20px;
+            font-size: 0.7rem;
+            color: #999;
+        }
+
+        .linked-list-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 30px 10px;
+            min-height: 120px;
+        }
+
+        .ll-node {
+            display: flex;
+            align-items: center;
+        }
+
+        .ll-node-box {
+            display: flex;
+            border: 2px solid var(--color-idle);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .ll-node-box.active {
+            border-color: var(--color-active);
+            box-shadow: 0 0 12px rgba(229, 57, 53, 0.5);
+        }
+
+        .ll-node-box.done {
+            border-color: var(--color-done);
+        }
+
+        .ll-node-value {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: white;
+        }
+
+        .ll-node-box.active .ll-node-value {
+            background: var(--color-active);
+            color: white;
+        }
+
+        .ll-node-box.done .ll-node-value {
+            background: var(--color-done);
+            color: #333;
+        }
+
+        .ll-node-pointer {
+            width: 24px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f5;
+            border-left: 2px solid var(--color-idle);
+            font-size: 0.8rem;
+            color: #6e6e73;
+        }
+
+        .ll-node-box.active .ll-node-pointer {
+            border-left-color: var(--color-active);
+            background: #ffebee;
+        }
+
+        .ll-arrow {
+            font-size: 1.5rem;
+            color: var(--color-idle);
+            margin: 0 4px;
+        }
+
+        .ll-null {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: #999;
+            padding: 8px 12px;
+            background: #f0f0f5;
+            border-radius: 4px;
+        }
+
+        .operation-detail {
+            background: #fff3cd;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 12px;
+        }
+
+        .operation-detail h4 {
+            font-size: 0.9rem;
+            color: #856404;
+            margin-bottom: 6px;
+        }
+
+        .operation-detail p {
+            font-size: 0.95rem;
+            color: #856404;
+            line-height: 1.5;
+        }
+
+        .next-hint {
+            background: #e3f2fd;
+            border-left: 4px solid var(--color-primary);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+        }
+
+        .next-hint h4 {
+            font-size: 0.9rem;
+            color: #0d47a1;
+            margin-bottom: 6px;
+        }
+
+        .next-hint p {
+            font-size: 0.95rem;
+            color: #0d47a1;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="vis-header">
+            <h1>数组与链表 - 交互演示</h1>
+            <p class="subtitle">点击"下一步"前进一步，点击"上一步"回退一步</p>
+        </header>
+
+        <main class="vis-main">
+            <div class="vis-container">
+                <!-- 左侧：可视化区域 -->
+                <div class="vis-panel">
+                    <!-- 操作标签 -->
+                    <div class="op-tabs" id="opTabs">
+                        <button class="op-tab active" data-op="array-insert">数组插入</button>
+                        <button class="op-tab" data-op="array-delete">数组删除</button>
+                        <button class="op-tab" data-op="list-prepend">链表头部插入</button>
+                        <button class="op-tab" data-op="list-append">链表尾部插入</button>
+                        <button class="op-tab" data-op="list-delete">链表删除</button>
+                    </div>
+
+                    <!-- 数据展示 -->
+                    <div class="data-display" id="dataDisplay">
+                        数据结构内容将显示在这里
+                    </div>
+
+                    <!-- 可视化区域 -->
+                    <div class="linked-list-visual" id="visualArea">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 右侧：信息区域 -->
+                <div class="vis-panel">
+                    <div class="info-box">
+                        <h4>当前步骤说明</h4>
+                        <p id="stepDescription">点击"下一步"开始演示</p>
+                    </div>
+
+                    <div class="operation-detail" id="operationDetail" style="display:none;">
+                        <h4>为什么要这么做？</h4>
+                        <p id="whyText"></p>
+                    </div>
+
+                    <div class="next-hint" id="nextHint" style="display:none;">
+                        <h4>下一步将做什么？</h4>
+                        <p id="nextText"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <section class="vis-controls">
+            <div class="control-row" id="inputRow">
+                <span class="control-label" id="valueLabel">数值：</span>
+                <input type="number" class="input-field" id="valueInput" value="10" min="1" max="999">
+                <span class="control-label" id="indexLabel" style="margin-left: 16px; display:none;">位置：</span>
+                <input type="number" class="input-field" id="indexInput" value="1" min="0" max="10" style="display:none;">
+                <button class="btn btn-primary" id="restartBtn" style="margin-left: 16px;">重新开始</button>
+            </div>
+            <div class="control-row" id="buttonRow">
+                <!-- 按钮由 JS 生成 -->
+            </div>
+        </section>
+    </div>
+
+    <script src="../shared/utils.js"></script>
+    <script src="visualization.js"></script>
+</body>
+</html>
