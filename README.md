@@ -1,4 +1,4 @@
-# 数据结构交互式可视化学习项目
+# 数据结构交互式可视化学习项目（claude code based）
 
 > 专为计算机相关专业大二学生设计的步进式数据结构学习工具
 
@@ -93,18 +93,11 @@ data-structures-tutorial/
 
 **必须通过本地服务器打开，不能直接双击 HTML 文件！**
 
-### 方法 1：用 VS Code（推荐）
+### 方法：用 Python 内置服务器
 
-1. 在 VS Code 中打开 `data-structures-tutorial` 文件夹
-2. 右键点击任意 `.html` 文件（如 `index.html` 或 `xx/visualization.html`）
-3. 选择 **"Open with Live Server"**
-4. 浏览器自动打开并显示页面
-
-### 方法 2：用 Python 内置服务器
-
-1. 打开终端，进入项目目录：
+1. 打开终端，进入项目目录（根据你具体的用户名和地址调整path/to部分）：
    ```bash
-   cd C:/Users/19699/Desktop/baby/data_structure/tutorial/data-structures-tutorial
+   cd path/to/tutorial
    ```
 2. 启动服务器：
    ```bash
