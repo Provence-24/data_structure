@@ -3,9 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>递归 - 交互演示</title>
+    <title>05 递归 - 交互演示</title>
     <link rel="stylesheet" href="../shared/style.css">
     <style>
+        /* 页面导航样式 */
+        .page-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1d1d1f;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .page-nav-left, .page-nav-right {
+            display: flex;
+            gap: 12px;
+        }
+        .page-nav a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .page-nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .page-nav a.home {
+            background: #0066cc;
+        }
+        .page-nav a.home:hover {
+            background: #0052a3;
+        }
+        .page-nav-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .page-content {
+            padding-top: 50px;
+        }
+
         .vis-container {
             display: flex;
             flex-wrap: wrap;
@@ -162,12 +206,23 @@
             margin: 4px 0;
         }
 
-        .stack-bottom {
-            padding: 8px 16px;
-            background: #f5f5f5;
-            border-radius: 4px;
+        .stack-top-label,
+        .stack-bottom-label {
+            padding: 4px 12px;
             font-size: 0.8rem;
             color: #666;
+            font-weight: 600;
+        }
+
+        .stack-top-label {
+            margin-bottom: 4px;
+        }
+
+        .stack-bottom-label {
+            margin-top: 4px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            padding: 8px 16px;
         }
 
         /* 斐波那契树样式 */
@@ -331,6 +386,18 @@
     </style>
 </head>
 <body>
+    <nav class="page-nav">
+        <div class="page-nav-left">
+            <a href="../index.html" class="home">← 首页</a>
+            <a href="../04_queue/visualization.html">← 04 队列</a>
+        </div>
+        <div class="page-nav-title">05 递归</div>
+        <div class="page-nav-right">
+            <a href="../06_tree_basics/visualization.html">树基础 06 →</a>
+        </div>
+    </nav>
+
+    <div class="page-content">
     <div class="container">
         <header class="vis-header">
             <h1>递归 - 交互演示</h1>
@@ -388,6 +455,7 @@
             <div class="control-row" id="buttonRow">
             </div>
         </section>
+    </div>
     </div>
 
     <script src="../shared/utils.js"></script>
@@ -513,145 +581,200 @@
         // 斐波那契步骤生成
         // ============================================================================
 
+        // ============================================================================
+        // 斐波那契递归树步骤生成
+        // ============================================================================
+
+        // 构建斐波那契树结构的辅助函数
+        function buildFibTreeStructure(n, path) {
+            return {
+                value: n,
+                path: path,
+                status: "pending", // pending | computing | returning | done
+                result: null,
+                left: null,
+                right: null
+            };
+        }
+
+        // 深拷贝树结构
+        function cloneFibTree(node) {
+            if (!node) return null;
+            var clone = {
+                value: node.value,
+                path: node.path,
+                status: node.status,
+                result: node.result,
+                left: node.left ? cloneFibTree(node.left) : null,
+                right: node.right ? cloneFibTree(node.right) : null
+            };
+            return clone;
+        }
+
+        // 查找树中对应路径的节点
+        function findNodeByPath(root, path) {
+            if (!root) return null;
+            if (root.path === path) return root;
+            if (root.left) {
+                var found = findNodeByPath(root.left, path);
+                if (found) return found;
+            }
+            if (root.right) {
+                var found = findNodeByPath(root.right, path);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        // 标记路径上所有节点为某个状态
+        function markPathToRoot(root, path, status) {
+            var parts = path.split("-");
+            var current = root;
+            for (var i = 0; i < parts.length; i++) {
+                if (current) {
+                    if (parts[i] === "L") {
+                        current = current.left;
+                    } else if (parts[i] === "R") {
+                        current = current.right;
+                    }
+                }
+            }
+            // 向上回溯标记
+            var node = findNodeByPath(root, path);
+            if (node) {
+                node.status = status;
+            }
+        }
+
         function generateFibonacciSteps(n) {
             var steps = [];
-            var callStack = [];
+            var root = buildFibTreeStructure(n, "root");
+            var returnValues = {}; // path -> result
 
-            // 初始状态
+            // 初始状态 - 展示完整但未展开的树
+            root.status = "computing";
             steps.push({
                 state: {
                     type: "fibonacci",
                     n: n,
                     phase: "start",
-                    stack: [],
-                    activeCalls: [],
-                    returnValues: {}
-                },
-                description: "斐波那契 fibonacci(" + n + ")",
-                why: "斐波那契数列：fib(n) = fib(n-1) + fib(n-2)",
-                next: "开始构建递归调用树"
+                    tree: cloneFibTree(root),
+                    returnValues: {},
+                    description: "fibonacci(" + n + ")",
+                    why: "斐波那契数列定义：fib(n) = fib(n-1) + fib(n-2)",
+                    next: "递归展开 fib(" + n + ")"
+                }
             });
 
-            // 递归生成斐波那契调用树
-            function buildFibTree(n, depth, callPath) {
-                callStack.push({n: n, path: callPath, depth: depth});
+            // 递归生成步骤
+            function buildFibSteps(node) {
+                if (!node) return;
 
-                var currentStack = callStack.slice();
+                // 当前节点开始计算
+                node.status = "computing";
                 steps.push({
                     state: {
                         type: "fibonacci",
                         n: n,
                         phase: "call",
-                        stack: currentStack,
-                        activeCalls: callStack.map(function(c) { return c.path; }),
-                        returnValues: {},
-                        depth: depth,
-                        path: callPath
-                    },
-                    description: "调用 fibonacci(" + n + ")",
-                    why: "压栈：需要计算 fib(" + n + ")",
-                    next: depth >= n ? "到达终止条件" : "继续递归调用"
+                        tree: cloneFibTree(root),
+                        returnValues: Object.assign({}, returnValues),
+                        activePath: node.path,
+                        description: "调用 fib(" + node.value + ")",
+                        why: "展开递归树，计算 fib(" + node.value + ")",
+                        next: node.value > 1 ? "继续展开左子树 fib(" + (node.value - 1) + ")" : "到达终止条件"
+                    }
                 });
 
-                if (n <= 1) {
-                    callStack.pop();
+                // 终止条件
+                if (node.value <= 1) {
+                    node.status = "done";
+                    node.result = node.value;
+                    returnValues[node.path] = node.value;
+
                     steps.push({
                         state: {
                             type: "fibonacci",
                             n: n,
                             phase: "return-base",
-                            stack: callStack.slice(),
-                            activeCalls: callStack.map(function(c) { return c.path; }),
-                            returnValues: {[callPath]: n},
-                            depth: depth,
-                            path: callPath,
-                            returnValue: n
-                        },
-                        description: "fibonacci(" + n + ") = " + n + "（终止条件）",
-                        why: "终止条件：fib(0)=0, fib(1)=1",
-                        next: "返回上层继续计算"
+                            tree: cloneFibTree(root),
+                            returnValues: Object.assign({}, returnValues),
+                            activePath: node.path,
+                            description: "fib(" + node.value + ") = " + node.value + " (终止条件)",
+                            why: "fib(0)=0, fib(1)=1 是递归终止条件",
+                            next: "返回上层"
+                        }
                     });
-                    return {value: n, path: callPath};
+                    return;
                 }
 
-                // 递归调用左子节点
-                var leftResult = buildFibTree(n - 1, depth + 1, callPath + "-L");
+                // 创建子节点
+                node.left = buildFibTreeStructure(node.value - 1, node.path + "-L");
+                node.right = buildFibTreeStructure(node.value - 2, node.path + "-R");
 
-                callStack.pop();
-                var currentStackAfterLeft = callStack.slice();
+                // 递归左子树
+                buildFibSteps(node.left);
 
+                // 左子树完成后，标记返回状态
+                node.left.status = "returning";
                 steps.push({
                     state: {
                         type: "fibonacci",
                         n: n,
                         phase: "after-left",
-                        stack: currentStackAfterLeft,
-                        activeCalls: callStack.map(function(c) { return c.path; }),
-                        returnValues: {[leftResult.path]: leftResult.value},
-                        depth: depth,
-                        path: callPath,
-                        leftDone: true
-                    },
-                    description: "fib(" + n + ") 收到左子节点结果：" + leftResult.value,
-                    why: "等待右子节点计算完成",
-                    next: "递归调用 fib(" + (n - 2) + ")"
+                        tree: cloneFibTree(root),
+                        returnValues: Object.assign({}, returnValues),
+                        activePath: node.path,
+                        leftResult: node.left.result,
+                        description: "fib(" + node.value + ") 收到左子节点：fib(" + node.left.value + ") = " + node.left.result,
+                        why: "左子树计算完成，等待右子树",
+                        next: "展开右子树 fib(" + (node.value - 2) + ")"
+                    }
                 });
 
-                // 递归调用右子节点
-                var rightResult = buildFibTree(n - 2, depth + 1, callPath + "-R");
+                // 递归右子树
+                buildFibSteps(node.right);
 
-                callStack.pop();
-                var finalResult = leftResult.value + rightResult.value;
+                // 右子树完成后，计算并返回
+                node.right.status = "returning";
+                var leftVal = node.left.result;
+                var rightVal = node.right.result;
+                var result = leftVal + rightVal;
+                node.result = result;
+                node.status = "done";
+                returnValues[node.path] = result;
 
                 steps.push({
                     state: {
                         type: "fibonacci",
                         n: n,
                         phase: "compute",
-                        stack: callStack.slice(),
-                        activeCalls: callStack.map(function(c) { return c.path; }),
-                        returnValues: {
-                            [leftResult.path]: leftResult.value,
-                            [rightResult.path]: rightResult.value,
-                            [callPath]: finalResult
-                        },
-                        depth: depth,
-                        path: callPath,
-                        returnValue: finalResult,
-                        leftValue: leftResult.value,
-                        rightValue: rightResult.value
-                    },
-                    description: "fib(" + n + ") = " + leftResult.value + " + " + rightResult.value + " = " + finalResult,
-                    why: "计算完成，返回结果给上层",
-                    next: "返回上层"
+                        tree: cloneFibTree(root),
+                        returnValues: Object.assign({}, returnValues),
+                        activePath: node.path,
+                        leftResult: leftVal,
+                        rightResult: rightVal,
+                        description: "fib(" + node.value + ") = fib(" + node.left.value + ") + fib(" + node.right.value + ") = " + leftVal + " + " + rightVal + " = " + result,
+                        why: "左右子树都计算完成，合并结果",
+                        next: "返回上层"
+                    }
                 });
-
-                return {value: finalResult, path: callPath};
             }
 
-            buildFibTree(n, 0, "root");
+            buildFibSteps(root);
 
-            // 计算 fib(n) 的实际值用于展示
-            function fibActual(k) {
-                if (k <= 0) return 0;
-                if (k === 1) return 1;
-                return fibActual(k - 1) + fibActual(k - 2);
-            }
-
-            var actualResult = fibActual(n);
-
+            // 最终状态
             steps.push({
                 state: {
                     type: "fibonacci",
                     n: n,
                     phase: "done",
-                    stack: [],
-                    activeCalls: [],
-                    returnValues: {"root": actualResult}
-                },
-                description: "递归完成！fibonacci(" + n + ") = " + actualResult,
-                why: "所有递归调用都已完成",
-                next: null
+                    tree: cloneFibTree(root),
+                    returnValues: Object.assign({}, returnValues),
+                    description: "递归完成！fibonacci(" + n + ") = " + root.result,
+                    why: "所有递归调用都已完成",
+                    next: null
+                }
             });
 
             return steps;
@@ -783,10 +906,11 @@
                 return;
             }
 
-            // 渲染栈帧
+            // 渲染栈帧 - 栈顶在上,栈底在下(倒序遍历)
             var html = '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">';
+            html += '<div class="stack-top-label">↑ 栈顶（最新调用）</div>';
 
-            for (var i = 0; i < stack.length; i++) {
+            for (var i = stack.length - 1; i >= 0; i--) {
                 var n = stack[i];
                 var isActive = (i === stack.length - 1) && (state.phase === "call" || state.phase === "compute");
                 var isReturning = state.phase === "return" || (state.phase === "compute" && i === stack.length - 1);
@@ -803,12 +927,12 @@
 
                 html += '</div>';
 
-                if (i < stack.length - 1) {
-                    html += '<div class="stack-arrow">↓</div>';
+                if (i > 0) {
+                    html += '<div class="stack-arrow">↑</div>';
                 }
             }
 
-            html += '<div class="stack-bottom">← 栈底</div>';
+            html += '<div class="stack-bottom-label">栈底</div>';
             html += '</div>';
 
             container.innerHTML = html;
@@ -818,42 +942,226 @@
             var container = document.getElementById("visualArea");
             container.innerHTML = "";
 
-            var stack = state.stack || [];
-
-            if (state.phase === "done" || stack.length === 0) {
-                if (state.returnValues && state.returnValues["root"] !== undefined) {
-                    container.innerHTML = '<div class="tree-node">' +
-                        '<div class="tree-node-box done">fib=' + state.returnValues["root"] + '</div>' +
-                        '<div style="margin-top:12px;font-size:0.9rem;color:#666;">递归完成</div>' +
-                        '</div>';
-                } else {
-                    container.innerHTML = '<div style="color:#999;padding:40px;">等待开始...</div>';
-                }
+            if (!state.tree) {
+                container.innerHTML = '<div style="color:#999;padding:40px;">等待开始...</div>';
                 return;
             }
 
-            // 渲染调用栈
-            var html = '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">';
-            html += '<div style="font-size:0.8rem;color:#666;margin-bottom:8px;">调用栈（从上到下为从新到旧）</div>';
+            if (state.phase === "done") {
+                container.innerHTML = '<div class="tree-node" style="padding:40px;">' +
+                    '<div class="tree-node-box done" style="width:100px;height:100px;font-size:2rem;">' + state.tree.result + '</div>' +
+                    '<div style="margin-top:16px;font-size:1.1rem;color:#666;">递归完成</div>' +
+                    '<div style="margin-top:8px;font-size:0.9rem;color:#999;">fib(' + state.n + ') = ' + state.tree.result + '</div>' +
+                    '</div>';
+                return;
+            }
 
-            for (var i = stack.length - 1; i >= 0; i--) {
-                var call = stack[i];
-                var isActive = (i === 0);
+            // 使用SVG绘制递归树
+            var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("id", "fibTreeSvg");
+            svg.setAttribute("style", "width:100%;height:320px;");
+            svg.setAttribute("preserveAspectRatio", "xMidYMin meet");
 
-                html += '<div class="stack-frame ' + (isActive ? 'active' : '') + '" style="width:auto;min-width:120px;">';
-                html += '<div class="func-name">fibonacci</div>';
-                html += '<div class="param">n = ' + call.n + '</div>';
-                html += '</div>';
+            // 计算树的节点位置
+            var nodePositions = {}; // path -> {x, y}
+            var tree = state.tree;
+            var treeHeight = getTreeHeight(tree);
+            var levelHeight = 55;
+            var nodeRadius = 24;
 
-                if (i > 0) {
-                    html += '<div class="stack-arrow">↓</div>';
+            // 计算每个节点的位置（使用更紧凑的布局）
+            var containerWidth = container.clientWidth || 600;
+            // 每层需要的位置数：第d层最多有 Math.pow(2, d) 个节点
+            // 但实际树不是完美二叉树，所以用实际节点数来计算间距
+            var levelNodeCounts = {};
+            var maxNodesAtLevel = 0;
+            var maxLevel = 0;
+
+            function countNodesAtLevels(node, depth) {
+                if (!node) return;
+                levelNodeCounts[depth] = (levelNodeCounts[depth] || 0) + 1;
+                maxLevel = Math.max(maxLevel, depth);
+                maxNodesAtLevel = Math.max(maxNodesAtLevel, levelNodeCounts[depth]);
+                countNodesAtLevels(node.left, depth + 1);
+                countNodesAtLevels(node.right, depth + 1);
+            }
+            countNodesAtLevels(tree, 0);
+
+            // 使用实际宽度，根据节点数动态计算间距
+            var minSpacing = 50; // 最小节点间距
+            var baseWidth = Math.max(containerWidth, maxNodesAtLevel * minSpacing + 40);
+
+            function calculatePositions(node, depth, left, right) {
+                if (!node) return;
+                // 动态宽度：该层节点数越多，间距越小
+                var levelWidth = right - left;
+                var nodeCountAtLevel = levelNodeCounts[depth] || 1;
+                var spacing = Math.max(minSpacing, levelWidth / (nodeCountAtLevel + 1));
+                var x = left + spacing;
+                var y = 35 + depth * levelHeight;
+                nodePositions[node.path] = {x: x, y: y};
+
+                if (node.left) {
+                    calculatePositions(node.left, depth + 1, left, x);
+                }
+                if (node.right) {
+                    calculatePositions(node.right, depth + 1, x, right);
                 }
             }
 
-            html += '<div class="stack-bottom">栈底</div>';
-            html += '</div>';
+            function getTreeHeight(node) {
+                if (!node) return 0;
+                var leftH = getTreeHeight(node.left);
+                var rightH = getTreeHeight(node.right);
+                return 1 + Math.max(leftH, rightH);
+            }
 
-            container.innerHTML = html;
+            calculatePositions(tree, 0, 20, baseWidth - 20);
+
+            // 设置 viewBox 以确保树完整显示
+            var svgWidth = baseWidth;
+            var svgHeight = 40 + (maxLevel + 1) * levelHeight + 20;
+            svg.setAttribute("viewBox", "0 0 " + svgWidth + " " + svgHeight);
+
+            // 绘制边
+            function drawEdges(node) {
+                if (!node) return;
+                if (node.left) {
+                    var parent = nodePositions[node.path];
+                    var child = nodePositions[node.left.path];
+                    var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", parent.x);
+                    line.setAttribute("y1", parent.y + nodeRadius);
+                    line.setAttribute("x2", child.x);
+                    line.setAttribute("y2", child.y - nodeRadius);
+                    line.setAttribute("stroke", "#ccc");
+                    line.setAttribute("stroke-width", "2");
+                    svg.appendChild(line);
+                    drawEdges(node.left);
+                }
+                if (node.right) {
+                    var parent = nodePositions[node.path];
+                    var child = nodePositions[node.right.path];
+                    var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", parent.x);
+                    line.setAttribute("y1", parent.y + nodeRadius);
+                    line.setAttribute("x2", child.x);
+                    line.setAttribute("y2", child.y - nodeRadius);
+                    line.setAttribute("stroke", "#ccc");
+                    line.setAttribute("stroke-width", "2");
+                    svg.appendChild(line);
+                    drawEdges(node.right);
+                }
+            }
+
+            // 绘制节点
+            function drawNode(node) {
+                if (!node) return;
+
+                var pos = nodePositions[node.path];
+                var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+                // 确定节点样式
+                var fillColor = "#fff";
+                var strokeColor = "#9e9e9e";
+                var strokeWidth = 2;
+                var fontWeight = "normal";
+                var fontColor = "#333";
+
+                if (node.status === "computing") {
+                    fillColor = "#ffebee";
+                    strokeColor = "#e53935";
+                    strokeWidth = 3;
+                } else if (node.status === "returning") {
+                    fillColor = "#e3f2fd";
+                    strokeColor = "#1976d2";
+                    strokeWidth = 3;
+                } else if (node.status === "done") {
+                    fillColor = "#e8f5e9";
+                    strokeColor = "#43a047";
+                    strokeWidth = 2;
+                }
+
+                // 圆圈
+                var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", pos.x);
+                circle.setAttribute("cy", pos.y);
+                circle.setAttribute("r", nodeRadius);
+                circle.setAttribute("fill", fillColor);
+                circle.setAttribute("stroke", strokeColor);
+                circle.setAttribute("stroke-width", strokeWidth);
+                g.appendChild(circle);
+
+                // 节点标签 (fib(n))
+                var label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", pos.x);
+                label.setAttribute("y", pos.y - 4);
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("dominant-baseline", "middle");
+                label.setAttribute("font-family", "var(--font-mono, monospace)");
+                label.setAttribute("font-size", "11");
+                label.setAttribute("fill", "#666");
+                label.textContent = "fib(" + node.value + ")";
+                g.appendChild(label);
+
+                // 如果有计算结果，显示结果
+                if (node.result !== null) {
+                    var result = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    result.setAttribute("x", pos.x);
+                    result.setAttribute("y", pos.y + 12);
+                    result.setAttribute("text-anchor", "middle");
+                    result.setAttribute("dominant-baseline", "middle");
+                    result.setAttribute("font-family", "var(--font-mono, monospace)");
+                    result.setAttribute("font-size", "14");
+                    result.setAttribute("font-weight", "bold");
+                    result.setAttribute("fill", "#2e7d32");
+                    result.textContent = "=" + node.result;
+                    g.appendChild(result);
+                }
+
+                // 高亮当前活跃节点
+                if (state.activePath === node.path && node.status === "computing") {
+                    var glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    glow.setAttribute("cx", pos.x);
+                    glow.setAttribute("cy", pos.y);
+                    glow.setAttribute("r", nodeRadius + 4);
+                    glow.setAttribute("fill", "none");
+                    glow.setAttribute("stroke", "#e53935");
+                    glow.setAttribute("stroke-width", 2);
+                    glow.setAttribute("stroke-opacity", 0.5);
+                    g.insertBefore(glow, circle);
+                }
+
+                svg.appendChild(g);
+
+                // 递归绘制子节点
+                if (node.left) drawNode(node.left);
+                if (node.right) drawNode(node.right);
+            }
+
+            drawEdges(tree);
+            drawNode(tree);
+
+            container.appendChild(svg);
+
+            // 添加图例
+            var legend = document.createElement("div");
+            legend.style.cssText = "display:flex;justify-content:center;gap:24px;margin-top:12px;font-size:0.8rem;";
+            legend.innerHTML = `
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="width:14px;height:14px;border-radius:50%;background:#ffebee;border:2px solid #e53935;"></div>
+                    <span style="color:#666;">计算中</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="width:14px;height:14px;border-radius:50%;background:#e8f5e9;border:2px solid #43a047;"></div>
+                    <span style="color:#666;">已完成</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <div style="width:14px;height:14px;border-radius:50%;background:#e3f2fd;border:2px solid #1976d2;"></div>
+                    <span style="color:#666;">返回中</span>
+                </div>
+            `;
+            container.appendChild(legend);
         }
 
         function renderReverse(state) {
@@ -874,10 +1182,11 @@
                 return;
             }
 
-            // 渲染栈帧
+            // 渲染栈帧 - 栈顶在上,栈底在下(倒序遍历)
             var html = '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">';
+            html += '<div class="stack-top-label">↑ 栈顶（最新调用）</div>';
 
-            for (var i = 0; i < stack.length; i++) {
+            for (var i = stack.length - 1; i >= 0; i--) {
                 var call = stack[i];
                 var isActive = (i === stack.length - 1);
 
@@ -886,12 +1195,12 @@
                 html += '<div class="param">"' + call.str + '"</div>';
                 html += '</div>';
 
-                if (i < stack.length - 1) {
-                    html += '<div class="stack-arrow">↓</div>';
+                if (i > 0) {
+                    html += '<div class="stack-arrow">↑</div>';
                 }
             }
 
-            html += '<div class="stack-bottom">栈底</div>';
+            html += '<div class="stack-bottom-label">栈底</div>';
             html += '</div>';
 
             container.innerHTML = html;
@@ -938,7 +1247,7 @@
                 document.getElementById("nextBox").style.display = "none";
             }
 
-            // 更新调用栈显示
+            // 更新调用栈显示 - 栈顶在上,栈底在下
             var stackDisplay = document.getElementById("stackDisplay");
             if (state.stack && state.stack.length > 0) {
                 var stackItems = state.stack.map(function(item) {
@@ -951,7 +1260,12 @@
                     }
                     return "";
                 });
-                stackDisplay.innerHTML = stackItems.join("<br>") + "<br><span style='color:#999'>↑ 栈顶</span>";
+                // 倒序:栈顶(最后压入的)显示在最上面
+                stackItems.reverse();
+                stackDisplay.innerHTML =
+                    "<span style='color:#999'>↑ 栈顶</span><br>" +
+                    stackItems.join("<br>") +
+                    "<br><span style='color:#999'>↓ 栈底</span>";
             } else {
                 stackDisplay.textContent = "栈为空";
             }

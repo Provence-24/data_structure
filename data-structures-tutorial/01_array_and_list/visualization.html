@@ -3,9 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>数组与链表 - 交互演示</title>
+    <title>01 数组与顺序表 - 交互演示</title>
     <link rel="stylesheet" href="../shared/style.css">
     <style>
+        /* 页面导航样式 */
+        .page-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1d1d1f;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .page-nav-left, .page-nav-right {
+            display: flex;
+            gap: 12px;
+        }
+        .page-nav a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .page-nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .page-nav a.home {
+            background: #0066cc;
+        }
+        .page-nav a.home:hover {
+            background: #0052a3;
+        }
+        .page-nav-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .page-content {
+            padding-top: 50px;
+        }
+
         /* 本地样式 */
         .vis-container {
             display: flex;
@@ -225,9 +269,20 @@
     </style>
 </head>
 <body>
+    <nav class="page-nav">
+        <div class="page-nav-left">
+            <a href="../index.html" class="home">← 首页</a>
+        </div>
+        <div class="page-nav-title">01 数组与顺序表</div>
+        <div class="page-nav-right">
+            <a href="../02_linked_list/visualization.html">链表 02 →</a>
+        </div>
+    </nav>
+
+    <div class="page-content">
     <div class="container">
         <header class="vis-header">
-            <h1>数组与链表 - 交互演示</h1>
+            <h1>数组与顺序表 - 交互演示</h1>
             <p class="subtitle">点击"下一步"前进一步，点击"上一步"回退一步</p>
         </header>
 
@@ -239,9 +294,6 @@
                     <div class="op-tabs" id="opTabs">
                         <button class="op-tab active" data-op="array-insert">数组插入</button>
                         <button class="op-tab" data-op="array-delete">数组删除</button>
-                        <button class="op-tab" data-op="list-prepend">链表头部插入</button>
-                        <button class="op-tab" data-op="list-append">链表尾部插入</button>
-                        <button class="op-tab" data-op="list-delete">链表删除</button>
                     </div>
 
                     <!-- 数据展示 -->
@@ -287,6 +339,7 @@
                 <!-- 按钮由 JS 生成 -->
             </div>
         </section>
+    </div>
     </div>
 
     <script src="../shared/utils.js"></script>

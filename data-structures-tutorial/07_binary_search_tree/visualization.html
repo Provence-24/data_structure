@@ -3,9 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>二叉搜索树 - 交互演示</title>
+    <title>07 二叉搜索树 - 交互演示</title>
     <link rel="stylesheet" href="../shared/style.css">
     <style>
+        /* 页面导航样式 */
+        .page-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1d1d1f;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .page-nav-left, .page-nav-right {
+            display: flex;
+            gap: 12px;
+        }
+        .page-nav a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .page-nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .page-nav a.home {
+            background: #0066cc;
+        }
+        .page-nav a.home:hover {
+            background: #0052a3;
+        }
+        .page-nav-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .page-content {
+            padding-top: 50px;
+        }
+
         .vis-container {
             display: flex;
             flex-wrap: wrap;
@@ -18,11 +62,50 @@
         }
 
         .tree-visual {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 30px 20px;
-            min-height: 320px;
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .tree-visual svg {
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* SVG 树节点样式 */
+        .tree-node-g circle {
+            fill: white;
+            stroke: var(--color-idle, #9e9e9e);
+            stroke-width: 3;
+            transition: all 0.3s;
+        }
+
+        .tree-node-g circle.current {
+            fill: #e3f2fd;
+            stroke: var(--color-primary, #1976d2);
+            stroke-width: 4;
+        }
+
+        .tree-node-g circle.visited {
+            fill: #e8f5e9;
+            stroke: var(--color-done, #4caf50);
+            stroke-width: 3;
+        }
+
+        .tree-node-g circle.found {
+            fill: #e8f5e9;
+            stroke: #4caf50;
+            stroke-width: 4;
+            filter: drop-shadow(0 0 8px rgba(76, 175, 80, 0.6));
+        }
+
+        .tree-node-text {
+            font-family: var(--font-mono, monospace);
+            font-size: 14px;
+            font-weight: 700;
+            fill: #1d1d1f;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
         }
 
         .tree-level {
@@ -240,6 +323,18 @@
     </style>
 </head>
 <body>
+    <nav class="page-nav">
+        <div class="page-nav-left">
+            <a href="../index.html" class="home">← 首页</a>
+            <a href="../06_tree_basics/visualization.html">← 06 树基础</a>
+        </div>
+        <div class="page-nav-title">07 二叉搜索树</div>
+        <div class="page-nav-right">
+            <a href="../08_heap/visualization.html">堆 08 →</a>
+        </div>
+    </nav>
+
+    <div class="page-content">
     <div class="container">
         <header class="vis-header">
             <h1>二叉搜索树 - 交互演示</h1>
@@ -261,7 +356,9 @@
                         <button class="btn btn-primary" id="goBtn" style="margin-left:8px;">执行</button>
                     </div>
 
-                    <div class="tree-visual" id="treeVisual"></div>
+                    <div class="tree-visual" id="treeVisual">
+                        <svg id="treeSvg" style="width:100%;height:400px;"></svg>
+                    </div>
 
                     <div class="result-display" id="resultDisplay">
                         <span class="value" id="resultValue">输入值后点击"执行"</span>
@@ -296,6 +393,7 @@
             <div class="control-row" id="buttonRow"></div>
         </section>
     </div>
+    </div>
 
     <script src="../shared/utils.js"></script>
     <script>
@@ -319,72 +417,81 @@
             }
         };
 
-        // 把 BST 渲染成 HTML
+        // BST 节点位置 (x, y) 和父子关系
+        var nodeRadius = 22;
+        var treeLayout = {
+            8: { x: 400, y: 50 },
+            3: { x: 200, y: 150 },
+            10: { x: 600, y: 150 },
+            1: { x: 100, y: 250 },
+            6: { x: 300, y: 250 },
+            14: { x: 700, y: 250 },
+            4: { x: 240, y: 350 },
+            7: { x: 360, y: 350 },
+            13: { x: 660, y: 350 }
+        };
+
+        // 连接线定义 (从父节点到子节点)
+        var treeEdges = [
+            { from: 8, to: 3 },
+            { from: 8, to: 10 },
+            { from: 3, to: 1 },
+            { from: 3, to: 6 },
+            { from: 10, to: 14 },
+            { from: 6, to: 4 },
+            { from: 6, to: 7 },
+            { from: 14, to: 13 }
+        ];
+
+        // 把 BST 渲染成 SVG
         function renderTree(state) {
-            var container = document.getElementById("treeVisual");
+            var svg = document.getElementById("treeSvg");
             var visited = state.visited || [];
             var current = state.current;
             var found = state.found;
             var path = state.path || [];
 
-            function makeNode(node, level, side) {
-                if (node === null) {
-                    return '<div class="tree-node"><div class="null-node"></div><div class="node-label">null</div></div>';
-                }
-                var cls = "tree-node-box";
-                if (found && node.value === found) cls += " found";
-                else if (state.notfound && current === node.value) cls += " notfound";
-                else if (path.includes(node.value)) cls += " current";
-                else if (visited.includes(node.value)) cls += " visited";
-                return '<div class="tree-node">' +
-                    '<div class="' + cls + '">' + node.value + '</div>' +
-                    '<div class="node-label">' + (side ? side : '') + '</div>' +
-                    '</div>';
+            var html = '';
+
+            // 绘制连接线
+            for (var i = 0; i < treeEdges.length; i++) {
+                var edge = treeEdges[i];
+                var fromPos = treeLayout[edge.from];
+                var toPos = treeLayout[edge.to];
+                var edgeId = 'edge-' + edge.from + '-' + edge.to;
+
+                var x1 = fromPos.x;
+                var y1 = fromPos.y + nodeRadius;
+                var x2 = toPos.x;
+                var y2 = toPos.y - nodeRadius;
+
+                // 检查这条边是否与当前访问相关
+                var isActive = (current === edge.from || current === edge.to);
+
+                html += '<line id="' + edgeId + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" ' +
+                    'stroke="' + (isActive ? '#e53935' : '#ccc') + '" stroke-width="' + (isActive ? '3' : '2') + '" />';
             }
 
-            var html = '<div class="tree-level"><div class="tree-node">' +
-                '<div class="tree-node-box ' + (current === bst.value ? 'current' : (visited.includes(bst.value) ? 'visited' : '')) + '">' + bst.value + '</div>' +
-                '<div class="node-label">根</div></div></div>';
+            // 绘制节点
+            for (var key in treeLayout) {
+                var pos = treeLayout[key];
+                var nodeValue = parseInt(key);
+                var isCurrent = (current === nodeValue);
+                var isVisited = visited.includes(nodeValue);
+                var isFound = (found === nodeValue);
 
-            html += '<div class="tree-edge"></div>';
+                var cls = 'tree-node-box';
+                if (isFound) cls += ' found';
+                else if (isCurrent) cls += ' current';
+                else if (isVisited) cls += ' visited';
 
-            // 第二层
-            html += '<div class="tree-level">';
-            html += makeNode(bst.left, 1, 'L');
-            html += makeNode(bst.right, 1, 'R');
-            html += '</div>';
-
-            if (bst.left || bst.right) {
-                html += '<div class="tree-edge"></div>';
-                // 第三层
-                html += '<div class="tree-level">';
-                html += makeNode(bst.left ? bst.left.left : null, 2, 'LL');
-                html += makeNode(bst.left ? bst.left.right : null, 2, 'LR');
-                html += makeNode(bst.right ? bst.right.left : null, 2, 'RL');
-                html += makeNode(bst.right ? bst.right.right : null, 2, 'RR');
-                html += '</div>';
+                html += '<g class="tree-node-g" id="node-g-' + key + '">';
+                html += '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + nodeRadius + '" class="' + cls + '" />';
+                html += '<text x="' + pos.x + '" y="' + pos.y + '" class="tree-node-text">' + key + '</text>';
+                html += '</g>';
             }
 
-            if ((bst.left && (bst.left.left || bst.left.right)) || (bst.right && (bst.right.left || bst.right.right))) {
-                html += '<div class="tree-edge"></div>';
-                // 第四层
-                html += '<div class="tree-level">';
-                var ll = bst.left && bst.left.left;
-                var lr = bst.left && bst.left.right;
-                var rl = bst.right && bst.right.left;
-                var rr = bst.right && bst.right.right;
-                html += makeNode(ll && ll.left ? ll.left : null, 3, 'LLL');
-                html += makeNode(ll && ll.right ? ll.right : null, 3, 'LLR');
-                html += makeNode(lr && lr.left ? lr.left : null, 3, 'LRL');
-                html += makeNode(lr && lr.right ? lr.right : null, 3, 'LRR');
-                html += makeNode(rl && rl.left ? rl.left : null, 3, 'RLL');
-                html += makeNode(rl && rl.right ? rl.right : null, 3, 'RLR');
-                html += makeNode(rr && rr.left ? rr.left : null, 3, 'RRL');
-                html += makeNode(rr && rr.right ? rr.right : null, 3, 'RRR');
-                html += '</div>';
-            }
-
-            container.innerHTML = html;
+            svg.innerHTML = html;
         }
 
         // 生成查找步骤

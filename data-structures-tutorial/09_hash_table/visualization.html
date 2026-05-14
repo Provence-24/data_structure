@@ -185,9 +185,65 @@
         .input-field-wide {
             width: 120px;
         }
+
+        /* 页面导航样式 */
+        .page-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1d1d1f;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .page-nav-left, .page-nav-right {
+            display: flex;
+            gap: 12px;
+        }
+        .page-nav a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .page-nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .page-nav a.home {
+            background: #0066cc;
+        }
+        .page-nav a.home:hover {
+            background: #0052a3;
+        }
+        .page-nav-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .page-content {
+            padding-top: 50px;
+        }
     </style>
 </head>
 <body>
+    <nav class="page-nav">
+        <div class="page-nav-left">
+            <a href="../index.html" class="home">← 首页</a>
+            <a href="../08_heap/visualization.html">← 08 堆</a>
+        </div>
+        <div class="page-nav-title">09 哈希表</div>
+        <div class="page-nav-right">
+            <a href="../10_graph/visualization.html">图 10 →</a>
+        </div>
+    </nav>
+
+    <div class="page-content">
     <div class="container">
         <header class="vis-header">
             <h1>哈希表 - 交互演示</h1>
@@ -206,8 +262,8 @@
                     <div class="control-row" id="inputRow">
                         <span class="control-label">键：</span>
                         <input type="text" class="input-field" id="keyInput" value="apple" style="width:100px;">
-                        <span class="control-label" style="margin-left:8px;">值：</span>
-                        <input type="number" class="input-field" id="valueInput" value="10" style="width:70px;">
+                        <span class="control-label value-label" style="margin-left:8px;">值：</span>
+                        <input type="number" class="input-field value-input" id="valueInput" value="10" style="width:70px;">
                         <button class="btn btn-primary" id="goBtn" style="margin-left:8px;">执行</button>
                     </div>
 
@@ -246,6 +302,7 @@
             <div class="control-row" id="buttonRow"></div>
         </section>
     </div>
+    </div>
 
     <script src="../shared/utils.js"></script>
     <script>
@@ -254,7 +311,14 @@
         var stepManager = null;
 
         var SIZE = 5;
-        var table = [[], [], [], [], []]; // 5个槽位，每个是链表
+        // 预填充一些数据，方便演示查找和删除
+        var table = [
+            [{ key: "apple", value: 10 }, { key: "banana", value: 20 }],
+            [{ key: "cherry", value: 30 }],
+            [{ key: "date", value: 40 }],
+            [],
+            [{ key: "elder", value: 50 }]
+        ];
 
         function hashFn(key) {
             return hashString(key) % SIZE;
@@ -276,6 +340,8 @@
             var newKey = state.newKey;
             var found = state.found;
             var deleted = state.deleted;
+            // 使用步骤状态中的表数据，而不是全局表
+            var tableData = state.tableData || table;
 
             var html = '<div class="slot-grid">';
 
@@ -288,7 +354,7 @@
                 html += '<div class="slot-index">' + i + '</div>';
                 html += '<div class="' + cls + '">';
 
-                var items = table[i];
+                var items = tableData[i];
                 if (items.length === 0) {
                     html += '<span style="color:#ccc;font-size:0.85rem;">空</span>';
                 } else {
@@ -302,25 +368,37 @@
                     }
                 }
 
-                html += '</div></div></div>';
+                html += '</div></div>';
             }
 
             container.innerHTML = html;
+        }
+
+        function deepCopyTable(tbl) {
+            var copy = [];
+            for (var i = 0; i < tbl.length; i++) {
+                copy[i] = [];
+                for (var j = 0; j < tbl[i].length; j++) {
+                    copy[i].push({ key: tbl[i][j].key, value: tbl[i][j].value });
+                }
+            }
+            return copy;
         }
 
         function genInsertSteps(key, value) {
             var s = [];
             var h = hashFn(key);
 
+            // 初始状态
             s.push({
-                state: { activeSlot: null, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: null, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "插入 key='" + key + "', value=" + value,
                 why: "hash('" + key + "') % 5 = " + h,
                 next: "定位到槽位 " + h
             });
 
             s.push({
-                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "定位到槽位 " + h,
                 why: "哈希函数决定键值对存储的位置",
                 next: "遍历链表查找或插入"
@@ -336,25 +414,36 @@
             }
 
             if (foundIdx >= 0) {
+                // 更新已存在的键 - 需要在 tableData 中更新
+                var dataAfterUpdate = deepCopyTable(table);
+                dataAfterUpdate[h][foundIdx].value = value;
                 s.push({
-                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: dataAfterUpdate },
                     description: "槽位 " + h + " 已有 key='" + key + "'，更新值",
                     why: "找到已存在的 key，直接更新",
                     next: "更新完成"
                 });
-                bucket[foundIdx].value = value;
             } else {
+                // 插入新键 - 需要在 tableData 中添加
+                var dataAfterInsert = deepCopyTable(table);
+                dataAfterInsert[h].push({ key: key, value: value });
                 s.push({
-                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: dataAfterInsert },
                     description: "槽位 " + h + " 链表中没有 '" + key + "'，追加到链表末尾",
                     why: "新键值对，添加到链表头部或末尾",
                     next: "插入完成"
                 });
-                bucket.push({ key: key, value: value });
             }
 
+            // 最终状态 - 清除高亮
+            var finalData = deepCopyTable(table);
+            if (foundIdx >= 0) {
+                finalData[h][foundIdx].value = value;
+            } else {
+                finalData[h].push({ key: key, value: value });
+            }
             s.push({
-                state: { activeSlot: null, highlightSlot: h, currentKey: null, newKey: key, found: null, deleted: null },
+                state: { activeSlot: null, highlightSlot: null, currentKey: null, newKey: key, found: null, deleted: null, tableData: finalData },
                 description: "插入完成！",
                 why: key + " 已存入槽位 " + h + " 的链表中",
                 next: null
@@ -368,14 +457,14 @@
             var h = hashFn(key);
 
             s.push({
-                state: { activeSlot: null, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: null, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "查找 key='" + key + "'",
                 why: "hash('" + key + "') % 5 = " + h,
                 next: "定位到槽位 " + h
             });
 
             s.push({
-                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "定位到槽位 " + h + "，遍历链表",
                 why: "在槽位 " + h + " 的链表中查找",
                 next: null
@@ -384,7 +473,7 @@
             var bucket = table[h];
             for (var i = 0; i < bucket.length; i++) {
                 s.push({
-                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                     description: "检查节点 " + (i + 1) + "：'" + bucket[i].key + "' = " + bucket[i].value,
                     why: "逐一比对链表中的键",
                     next: key === bucket[i].key ? "找到！" : "继续查找"
@@ -392,7 +481,7 @@
 
                 if (bucket[i].key === key) {
                     s.push({
-                        state: { activeSlot: h, highlightSlot: null, currentKey: null, newKey: null, found: key, deleted: null },
+                        state: { activeSlot: h, highlightSlot: null, currentKey: null, newKey: null, found: key, deleted: null, tableData: deepCopyTable(table) },
                         description: "找到！" + key + " = " + bucket[i].value,
                         why: "键匹配，返回对应的值",
                         next: null
@@ -402,7 +491,7 @@
             }
 
             s.push({
-                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "槽位 " + h + " 链表中未找到 '" + key + "'",
                 why: "遍历完整个链表都没找到",
                 next: null
@@ -416,14 +505,14 @@
             var h = hashFn(key);
 
             s.push({
-                state: { activeSlot: null, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: null, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "删除 key='" + key + "'",
                 why: "hash('" + key + "') % 5 = " + h,
                 next: "定位到槽位 " + h
             });
 
             s.push({
-                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "定位到槽位 " + h + "，遍历链表",
                 why: "在槽位 " + h + " 的链表中查找要删除的节点",
                 next: null
@@ -431,17 +520,20 @@
 
             var bucket = table[h];
             for (var i = 0; i < bucket.length; i++) {
+                var dataBeforeCheck = deepCopyTable(table);
                 s.push({
-                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                    state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: dataBeforeCheck },
                     description: "检查节点：'" + bucket[i].key + "' = " + bucket[i].value,
                     why: key === bucket[i].key ? "找到要删除的节点" : "不是目标，继续",
                     next: null
                 });
 
                 if (bucket[i].key === key) {
-                    bucket.splice(i, 1);
+                    // 创建删除后的数据快照
+                    var dataAfterDelete = deepCopyTable(table);
+                    dataAfterDelete[h].splice(i, 1);
                     s.push({
-                        state: { activeSlot: null, highlightSlot: h, currentKey: null, newKey: null, found: null, deleted: key },
+                        state: { activeSlot: null, highlightSlot: null, currentKey: null, newKey: null, found: null, deleted: key, tableData: dataAfterDelete },
                         description: "删除完成！",
                         why: "从槽位 " + h + " 的链表中移除了 '" + key + "'",
                         next: null
@@ -451,7 +543,7 @@
             }
 
             s.push({
-                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null },
+                state: { activeSlot: h, highlightSlot: null, currentKey: key, newKey: null, found: null, deleted: null, tableData: deepCopyTable(table) },
                 description: "槽位 " + h + " 链表中未找到 '" + key + "'，删除失败",
                 why: "要删除的键不存在",
                 next: null
@@ -461,6 +553,11 @@
         }
 
         function render(state) {
+            // 如果步骤状态中有 tableData，更新全局 table
+            if (state.tableData) {
+                table = deepCopyTable(state.tableData);
+            }
+
             renderHash(state);
 
             var resultEl = document.getElementById("resultValue");
@@ -507,12 +604,35 @@
 
         function init(op, key, value) {
             currentOp = op;
-            if (op === "insert") steps = genInsertSteps(key, value);
-            else if (op === "search") steps = genSearchSteps(key);
-            else if (op === "delete") steps = genDeleteSteps(key);
+
+            // 更新 inputRow 的显示
+            updateInputRow(op);
+
+            if (op === "insert") {
+                steps = genInsertSteps(key, value);
+            }
+            else if (op === "search") {
+                steps = genSearchSteps(key);
+            }
+            else if (op === "delete") {
+                steps = genDeleteSteps(key);
+            }
             stepManager = createStepManager(steps, render);
             stepManager.render();
             updateButtons();
+        }
+
+        // 根据操作类型更新输入框显示
+        function updateInputRow(op) {
+            var valueLabel = document.querySelector(".value-label");
+            var valueInput = document.querySelector(".value-input");
+            if (op === "insert") {
+                valueLabel.style.display = "inline";
+                valueInput.style.display = "inline";
+            } else {
+                valueLabel.style.display = "none";
+                valueInput.style.display = "none";
+            }
         }
 
         window.addEventListener("DOMContentLoaded", function() {
@@ -528,9 +648,19 @@
                 tab.addEventListener("click", function() {
                     opTabs.forEach(function(t) { t.classList.remove("active"); });
                     tab.classList.add("active");
-                    var key = document.getElementById("keyInput").value || "apple";
-                    var val = parseInt(document.getElementById("valueInput").value) || 10;
-                    init(tab.getAttribute("data-op"), key, val);
+                    currentOp = tab.getAttribute("data-op");
+                    // 更新输入框显示
+                    updateInputRow(currentOp);
+
+                    // 显示当前表格状态，不执行操作
+                    renderHash({ tableData: table, activeSlot: null, highlightSlot: null, currentKey: null, newKey: null, found: null, deleted: null });
+                    document.getElementById("resultDisplay").innerHTML = '<span id="resultValue">当前表状态，点击"执行"开始' + (currentOp === "search" ? "查找" : currentOp === "delete" ? "删除" : "插入") + '</span>';
+                    document.getElementById("stepDescription").textContent = '点击"执行"开始' + (currentOp === "search" ? "查找" : currentOp === "delete" ? "删除" : "插入");
+                    document.getElementById("whyBox").style.display = "none";
+                    document.getElementById("nextBox").style.display = "none";
+                    document.getElementById("stepIndicator").textContent = "步骤 1 / 1";
+                    document.getElementById("btnPrev").disabled = true;
+                    document.getElementById("btnNext").disabled = true;
                 });
             });
 

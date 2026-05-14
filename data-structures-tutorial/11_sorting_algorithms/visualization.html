@@ -171,9 +171,64 @@
             font-size: 1rem;
             width: 70px;
         }
+
+        /* 页面导航样式 */
+        .page-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1d1d1f;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .page-nav-left, .page-nav-right {
+            display: flex;
+            gap: 12px;
+        }
+        .page-nav a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .page-nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .page-nav a.home {
+            background: #0066cc;
+        }
+        .page-nav a.home:hover {
+            background: #0052a3;
+        }
+        .page-nav-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .page-content {
+            padding-top: 50px;
+        }
     </style>
 </head>
 <body>
+    <nav class="page-nav">
+        <div class="page-nav-left">
+            <a href="../index.html" class="home">← 首页</a>
+            <a href="../10_graph/visualization.html">← 10 图</a>
+        </div>
+        <div class="page-nav-title">11 排序算法</div>
+        <div class="page-nav-right">
+        </div>
+    </nav>
+
+    <div class="page-content">
     <div class="container">
         <header class="vis-header">
             <h1>排序算法 - 交互演示</h1>
@@ -189,7 +244,6 @@
                         <button class="op-tab" data-op="insertion">插入</button>
                         <button class="op-tab" data-op="merge">归并</button>
                         <button class="op-tab" data-op="quick">快排</button>
-                        <button class="op-tab" data-op="heap">堆排</button>
                     </div>
 
                     <div class="control-row">
@@ -202,6 +256,19 @@
 
                     <div class="result-display" id="resultDisplay">
                         <span id="resultValue">点击"开始排序"</span>
+                    </div>
+
+                    <!-- 堆排序说明区域 -->
+                    <div class="heap-intro" id="heapIntro" style="margin-top:20px; padding:20px; background:#f5f5f5; border-radius:8px;">
+                        <h3 style="margin-bottom:12px;">堆排序</h3>
+                        <p style="margin-bottom:12px;">堆排序利用堆这种数据结构进行排序。核心思想：</p>
+                        <ol style="margin-bottom:12px; padding-left:20px;">
+                            <li>将数组构建成最大堆（父节点大于子节点）</li>
+                            <li>堆顶是最大元素，与末尾交换</li>
+                            <li>剩余元素重新堆化，重复直到排序完成</li>
+                        </ol>
+                        <p style="margin-bottom:16px;">二叉堆的父子节点关系：左子节点 = 父节点×2+1，右子节点 = 父节点×2+2</p>
+                        <a href="../08_heap/visualization.html" class="btn btn-primary" style="text-decoration:none; display:inline-block;">前往堆排序交互演示 →</a>
                     </div>
                 </div>
 
@@ -232,6 +299,7 @@
         <section class="vis-controls">
             <div class="control-row" id="buttonRow"></div>
         </section>
+    </div>
     </div>
 
     <script src="../shared/utils.js"></script>
@@ -637,116 +705,6 @@
             return s;
         }
 
-        // ==================== 堆排序 ====================
-        function genHeapSteps() {
-            var s = [];
-            var arr = originalArr.slice();
-            var n = arr.length;
-
-            s.push({
-                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
-                description: "原始数组：" + arr.join(", "),
-                why: "堆排序：先建堆，然后逐个取出堆顶",
-                next: "先构建最大堆"
-            });
-
-            function sift_down(arr2, i, size) {
-                while (true) {
-                    var largest = i;
-                    var left = 2 * i + 1;
-                    var right = 2 * i + 2;
-
-                    s.push({
-                        state: { arr: arr2.slice(), activeIdx: i, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null, heapSize: size },
-                        description: "下沉节点 " + i + "（值=" + arr2[i] + "）",
-                        why: "比较节点和它的两个子节点",
-                        next: null
-                    });
-
-                    if (left < size && arr2[left] > arr2[largest]) largest = left;
-                    if (right < size && arr2[right] > arr2[largest]) largest = right;
-
-                    if (largest !== i) {
-                        s.push({
-                            state: { arr: arr2.slice(), activeIdx: i, comparedIdx: [largest], sortedIdx: [], pivotIdx: null, currentIdx: null, heapSize: size },
-                            description: "交换 arr[" + i + "]=" + arr2[i] + " 和 arr[" + largest + "]=" + arr2[largest],
-                            why: "子节点更大，上浮子节点",
-                            next: null
-                        });
-
-                        var tmp = arr2[i]; arr2[i] = arr2[largest]; arr2[largest] = tmp;
-                        i = largest;
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            // 构建最大堆
-            for (var i2 = Math.floor(n / 2) - 1; i2 >= 0; i2--) {
-                s.push({
-                    state: { arr: arr.slice(), activeIdx: i2, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
-                    description: "对节点 " + i2 + " 下沉，构建最大堆",
-                    why: "从最后一个非叶子节点开始",
-                    next: null
-                });
-                sift_down(arr, i2, n);
-                s.push({
-                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
-                    description: "数组状态：" + arr.join(", "),
-                    why: null,
-                    next: null
-                });
-            }
-
-            s.push({
-                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: [], pivotIdx: null, currentIdx: null },
-                description: "最大堆构建完成！",
-                why: "堆顶是最大元素",
-                next: "开始逐个取出堆顶"
-            });
-
-            // 逐个取出
-            var sortedIdx = [];
-            for (var j = n - 1; j > 0; j--) {
-                s.push({
-                    state: { arr: arr.slice(), activeIdx: 0, comparedIdx: [j], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
-                    description: "交换堆顶 " + arr[0] + " 和末尾 " + arr[j],
-                    why: "堆顶是最大元素，移到已排序区",
-                    next: null
-                });
-
-                var tmp = arr[0]; arr[0] = arr[j]; arr[j] = tmp;
-                sortedIdx.push(j);
-
-                s.push({
-                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: 0 },
-                    description: "对堆顶下沉，剩余 " + arr.slice(0, j).join(", "),
-                    why: "重新堆化剩余元素",
-                    next: null
-                });
-
-                sift_down(arr, 0, j);
-
-                s.push({
-                    state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
-                    description: "数组状态：" + arr.join(", "),
-                    why: null,
-                    next: null
-                });
-            }
-
-            sortedIdx.push(0);
-            s.push({
-                state: { arr: arr.slice(), activeIdx: null, comparedIdx: [], sortedIdx: sortedIdx.slice(), pivotIdx: null, currentIdx: null },
-                description: "排序完成！" + arr.join(", "),
-                why: null,
-                next: null
-            });
-
-            return s;
-        }
-
         function render(state) {
             renderBars(state);
 
@@ -786,12 +744,31 @@
 
         function init(op) {
             currentOp = op;
-            if (op === "bubble") steps = genBubbleSteps();
-            else if (op === "selection") steps = genSelectionSteps();
-            else if (op === "insertion") steps = genInsertionSteps();
-            else if (op === "merge") steps = genMergeSteps();
-            else if (op === "quick") steps = genQuickSteps();
-            else if (op === "heap") steps = genHeapSteps();
+            if (op === "bubble") {
+                steps = genBubbleSteps();
+                document.getElementById("barsContainer").style.display = "flex";
+                document.getElementById("heapIntro").style.display = "none";
+            }
+            else if (op === "selection") {
+                steps = genSelectionSteps();
+                document.getElementById("barsContainer").style.display = "flex";
+                document.getElementById("heapIntro").style.display = "none";
+            }
+            else if (op === "insertion") {
+                steps = genInsertionSteps();
+                document.getElementById("barsContainer").style.display = "flex";
+                document.getElementById("heapIntro").style.display = "none";
+            }
+            else if (op === "merge") {
+                steps = genMergeSteps();
+                document.getElementById("barsContainer").style.display = "flex";
+                document.getElementById("heapIntro").style.display = "none";
+            }
+            else if (op === "quick") {
+                steps = genQuickSteps();
+                document.getElementById("barsContainer").style.display = "flex";
+                document.getElementById("heapIntro").style.display = "none";
+            }
             stepManager = createStepManager(steps, render);
             stepManager.render();
             updateButtons();

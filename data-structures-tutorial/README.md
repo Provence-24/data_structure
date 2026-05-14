@@ -34,7 +34,7 @@ data-structures-tutorial/
 │   ├── style.css                 # 统一样式
 │   └── utils.js                  # 通用工具：步骤管理、按钮组件等
 ├── 00_python_basics/             # Python 速成（零基础先看这里）
-├── 01_array_and_list/            # 数组与链表
+├── 01_array_and_list/            # 数组与顺序表
 ├── 02_linked_list/              # 链表
 ├── 03_stack/                    # 栈
 ├── 04_queue/                    # 队列

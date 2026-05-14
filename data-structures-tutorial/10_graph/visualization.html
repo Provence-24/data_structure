@@ -19,14 +19,15 @@
 
         .graph-visual {
             padding: 20px;
-            min-height: 280px;
+            min-height: 360px;
             display: flex;
             justify-content: center;
         }
 
         .svg-container {
-            width: 100%;
-            max-width: 400px;
+            width: 700px;
+            max-width: 100%;
+            height: auto;
         }
 
         /* ===== 节点默认样式 ===== */
@@ -39,7 +40,7 @@
 
         .node-g text {
             font-family: var(--font-main, system-ui, -apple-system, sans-serif);
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
             fill: #1d1d1f;
             text-anchor: middle;
@@ -186,9 +187,65 @@
             font-size: 1rem;
             width: 70px;
         }
+
+        /* 页面导航样式 */
+        .page-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #1d1d1f;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .page-nav-left, .page-nav-right {
+            display: flex;
+            gap: 12px;
+        }
+        .page-nav a {
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .page-nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .page-nav a.home {
+            background: #0066cc;
+        }
+        .page-nav a.home:hover {
+            background: #0052a3;
+        }
+        .page-nav-title {
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        .page-content {
+            padding-top: 50px;
+        }
     </style>
 </head>
 <body>
+    <nav class="page-nav">
+        <div class="page-nav-left">
+            <a href="../index.html" class="home">← 首页</a>
+            <a href="../09_hash_table/visualization.html">← 09 哈希表</a>
+        </div>
+        <div class="page-nav-title">10 图</div>
+        <div class="page-nav-right">
+            <a href="../11_sorting_algorithms/visualization.html">排序 11 →</a>
+        </div>
+    </nav>
+
+    <div class="page-content">
     <div class="container">
         <header class="vis-header">
             <h1>图 - 交互演示</h1>
@@ -210,12 +267,18 @@
                             <option value="B">B</option>
                             <option value="C">C</option>
                             <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="G">G</option>
+                            <option value="H">H</option>
+                            <option value="I">I</option>
+                            <option value="J">J</option>
                         </select>
                         <button class="btn btn-primary" id="goBtn" style="margin-left:8px;">执行</button>
                     </div>
 
                     <div class="graph-visual" id="graphVisual">
-                        <svg class="svg-container" viewBox="0 0 400 320" id="svgGraph"></svg>
+                        <svg class="svg-container" viewBox="0 0 700 400" preserveAspectRatio="xMidYMin meet" id="svgGraph"></svg>
                     </div>
 
                     <div class="result-display" id="resultDisplay">
@@ -260,6 +323,7 @@
             <div class="control-row" id="buttonRow"></div>
         </section>
     </div>
+    </div>
 
     <script src="../shared/utils.js"></script>
     <script>
@@ -267,26 +331,42 @@
         var steps = [];
         var stepManager = null;
 
-        // 无向图
+        // 无向图 - 10个节点，12条边
         var graphData = {
-            'A': ['B', 'C'],
-            'B': ['A', 'C', 'D'],
-            'C': ['A', 'B', 'D'],
-            'D': ['B', 'C']
+            'A': ['B', 'F'],
+            'B': ['A', 'C', 'G'],
+            'C': ['B', 'D'],
+            'D': ['C', 'E', 'H'],
+            'E': ['D', 'I'],
+            'F': ['A', 'G'],
+            'G': ['B', 'F', 'H'],
+            'H': ['D', 'G', 'I'],
+            'I': ['E', 'H', 'J'],
+            'J': ['I']
         };
 
-        // 节点位置
+        // 节点位置 - 两行布局
         var nodePos = {
-            'A': { x: 200, y: 60 },
-            'B': { x: 100, y: 160 },
-            'C': { x: 300, y: 160 },
-            'D': { x: 200, y: 260 }
+            'A': { x: 100, y: 80 },
+            'B': { x: 200, y: 80 },
+            'C': { x: 300, y: 80 },
+            'D': { x: 400, y: 80 },
+            'E': { x: 500, y: 80 },
+            'F': { x: 100, y: 280 },
+            'G': { x: 200, y: 280 },
+            'H': { x: 300, y: 280 },
+            'I': { x: 400, y: 280 },
+            'J': { x: 500, y: 280 }
         };
 
+        // 边列表 (12条边)
         var edgeList = [
-            ['A', 'B'], ['A', 'C'],
-            ['B', 'C'], ['B', 'D'],
-            ['C', 'D']
+            // 上行横向 (4边)
+            ['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'E'],
+            // 下行横向 (4边)
+            ['F', 'G'], ['G', 'H'], ['H', 'I'], ['I', 'J'],
+            // 上下连接 (4边)
+            ['A', 'F'], ['B', 'G'], ['D', 'H'], ['E', 'I']
         ];
 
         function buildSVG() {
@@ -307,7 +387,7 @@
             for (var key in nodePos) {
                 var p = nodePos[key];
                 html += '<g class="node-g" id="ng-' + key + '">' +
-                    '<circle cx="' + p.x + '" cy="' + p.y + '" r="28"/>' +
+                    '<circle cx="' + p.x + '" cy="' + p.y + '" r="32"/>' +
                     '<text x="' + p.x + '" y="' + p.y + '">' + key + '</text>' +
                     '</g>';
             }

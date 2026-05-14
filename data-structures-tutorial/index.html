@@ -34,7 +34,7 @@
                     <div class="path-arrow">→</div>
                     <div class="path-item" data-chapter="00">00<br>Python基础</div>
                     <div class="path-arrow">→</div>
-                    <div class="path-item" data-chapter="01">01<br>数组与链表</div>
+                    <div class="path-item" data-chapter="01">01<br>数组与顺序表</div>
                     <div class="path-arrow">→</div>
                     <div class="path-item" data-chapter="02">02<br>链表</div>
                     <div class="path-arrow">→</div>
@@ -80,8 +80,8 @@
             },
             {
                 id: "01",
-                name: "数组与链表",
-                desc: "两种最基本的数据结构，原理与适用场景",
+                name: "数组与顺序表",
+                desc: "数组和顺序表的概念、原理与实现",
                 difficulty: "入门",
                 time: "1小时",
                 hasPython: true,
@@ -227,7 +227,7 @@
                 linksHtml += '<a href="python_viewer.html?chapter=' + chapterPath + '&file=' + pyFile + '" class="link-btn py-btn" target="_blank">📄 Python</a>';
             }
             if (ch.hasVis) {
-                linksHtml += '<a href="' + ch.path + 'visualization.html" class="link-btn vis-btn" target="_blank">🎮 演示</a>';
+                linksHtml += '<a href="' + ch.path + 'visualization.html" class="link-btn vis-btn">🎮 演示</a>';
             }
             linksHtml += '<a href="md_viewer.html?chapter=' + ch.id + '" class="link-btn read-btn" target="_blank">📖 原理</a></div>';
 
@@ -265,10 +265,10 @@
                 if (chapter) {
                     if (chapter.hasVis) {
                         // 有可视化页面，直接跳转
-                        window.open(chapter.path + "visualization.html", "_blank");
+                        window.location.href = chapter.path + "visualization.html";
                     } else {
                         // 没有可视化页面，打开 README
-                        window.open(chapter.path + "README.md", "_blank");
+                        window.location.href = chapter.path + "README.md";
                     }
                 }
             });
