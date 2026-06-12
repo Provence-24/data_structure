@@ -54,22 +54,34 @@
             display: flex;
             flex-wrap: wrap;
             gap: 24px;
+            width: 100%;
+            align-items: flex-start;
         }
 
         .vis-panel {
-            flex: 1;
             min-width: 320px;
+        }
+
+        .tree-panel {
+            flex: 2 1 560px;
+        }
+
+        .info-panel {
+            flex: 1 1 320px;
         }
 
         /* 树的可视化样式 */
         .tree-visual {
             padding: 20px;
             min-height: 320px;
+            overflow: visible;
         }
 
         .tree-visual svg {
             display: block;
             margin: 0 auto;
+            max-width: 100%;
+            overflow: visible;
         }
 
         /* SVG 树节点样式 */
@@ -78,6 +90,8 @@
             stroke: var(--color-idle, #9e9e9e);
             stroke-width: 3;
             transition: all 0.3s;
+            transform-box: fill-box;
+            transform-origin: center;
         }
 
         .tree-node-g circle.current {
@@ -117,6 +131,21 @@
             background: white;
             transition: all 0.3s;
             position: relative;
+        }
+
+        .tree-node-g circle.tree-node-box {
+            width: auto;
+            height: auto;
+            display: initial;
+            border: none;
+            border-radius: 0;
+            background: none;
+            position: static;
+        }
+
+        .tree-node-g circle.tree-node-box.active,
+        .tree-node-g circle.tree-node-box.current {
+            transform: none;
         }
 
         .tree-node-box.active {
@@ -363,6 +392,16 @@
         .order-hint-item strong {
             color: var(--color-primary);
         }
+
+        @media (max-width: 960px) {
+            .vis-container {
+                flex-direction: column;
+            }
+
+            .vis-panel {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -386,7 +425,7 @@
 
         <main class="vis-main">
             <div class="vis-container">
-                <div class="vis-panel">
+                <div class="vis-panel tree-panel">
                     <div class="op-tabs" id="opTabs">
                         <button class="op-tab active" data-op="preorder">前序（根左右）</button>
                         <button class="op-tab" data-op="inorder">中序（左根右）</button>
@@ -398,7 +437,7 @@
                     </div>
 
                     <div class="tree-visual" id="treeVisual">
-                        <svg id="treeSvg" style="width:100%;height:320px;"></svg>
+                        <svg id="treeSvg" viewBox="0 0 400 320" style="width:100%;height:320px;"></svg>
                     </div>
 
                     <div class="result-display" id="resultDisplay">
@@ -407,7 +446,7 @@
                     </div>
                 </div>
 
-                <div class="vis-panel">
+                <div class="vis-panel info-panel">
                     <div class="info-box">
                         <h4>当前步骤</h4>
                         <p id="stepDescription">点击"下一步"开始演示</p>
